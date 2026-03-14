@@ -33,18 +33,18 @@
 }
 
 :root {
-  --background: #0f172a; /* Deep Earthy Navy / Slate */
-  --foreground: #f8fafc; /* Slate White */
-  --muted: #94a3b8; /* Slate Muted */
-  --border: #1e293b; /* Slate Border */
-  --primary: #1e293b; 
-  --accent: #3b82f6;
-  --accent-blue: #3b82f6; /* Earthy Blue */
-  --accent-purple: #6366f1;
+  --background: #f8fafc; /* Very light slate background */
+  --foreground: #0f172a; /* Deep Navy text */
+  --muted: #64748b; 
+  --border: #e2e8f0; /* Light slate border */
+  --primary: #3b82f6; 
+  --accent: #60a5fa;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
   --accent-green: #10b981;
-  --accent-slate: #64748b; 
-  --bg-secondary: #1e293b;
-  --text-secondary: #cbd5e1;
+  --accent-slate: #94a3b8; 
+  --bg-secondary: #ffffff;
+  --text-secondary: #475569;
   --text-muted: #94a3b8;
 }
 
@@ -56,7 +56,7 @@ body {
 }
 
 .glass {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);
 }
@@ -149,16 +149,16 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 200;
-  padding: 1.25rem 2rem;
-  border-radius: 1.5rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  padding: 1rem 2rem;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   gap: 1rem;
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: 600;
   animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

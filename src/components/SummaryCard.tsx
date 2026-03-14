@@ -23,7 +23,7 @@ export default function SummaryCard({ summary, index, onClick, onDelete }: Props
             transition={{ delay: index * 0.05 }}
             whileHover={{ y: -5 }}
             onClick={onClick}
-            className="group relative bg-[#1e293b] border border-[#1e293b] rounded-[32px] p-8 cursor-pointer transition-all hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/5"
+            className="group relative bg-white border border-slate-100 rounded-3xl p-8 cursor-pointer transition-all hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 shadow-sm"
         >
             <div className="flex flex-col space-y-6">
                 {/* Header: Date and Platform */}
@@ -39,12 +39,12 @@ export default function SummaryCard({ summary, index, onClick, onDelete }: Props
                 </div>
 
                 {/* Title */}
-                <h3 className="text-xl font-bold text-white line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
+                <h3 className="text-xl font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-blue-500 transition-colors">
                     {summary.video_title}
                 </h3>
 
                 {/* Preview Text */}
-                <p className="text-sm text-slate-400 line-clamp-3 font-medium leading-relaxed">
+                <p className="text-sm text-slate-500 line-clamp-3 font-medium leading-relaxed">
                     {summary.short_summary}
                 </p>
 

@@ -87,38 +87,38 @@ export default function HistoryPage() {
 
     if (loading && !summaries.length) {
         return (
-            <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <Loader2 className="animate-spin text-blue-500" size={48} />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-[#0f172a] flex">
+        <div className="min-h-screen bg-slate-50 flex text-slate-900">
             <Navbar user={user} onSignOut={handleSignOut} />
 
             <main className="flex-1 py-12 pr-6 md:pr-12 space-y-12 pl-32 transition-all duration-300">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                            <HistoryIcon size={12} /> ARCHIVED INTELLIGENCE
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-500 text-[10px] font-bold uppercase tracking-[0.2em]">
+                            <HistoryIcon size={12} /> ARCHIVED SUMMARIES
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">Knowledge <span className="text-blue-500">Vault</span></h1>
-                        <p className="text-slate-400 font-medium text-lg max-w-xl">
-                            Access your previously synthesized intelligence reports and strategic video analyses.
+                        <h1 className="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">Knowledge <span className="text-blue-500">Vault</span></h1>
+                        <p className="text-slate-500 font-medium text-lg max-w-xl">
+                            Access your previously synthesized reports and research history.
                         </p>
                     </div>
 
                     {/* Search Bar */}
                     <div className="relative group w-full md:w-96">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
                         <input
                             type="text"
-                            placeholder="Search your knowledge base..."
+                            placeholder="Search your library..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-[#1e293b] border border-[#334155] rounded-[20px] py-4 pl-12 pr-6 text-white placeholder-slate-600 transition-all focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 font-medium"
+                            className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-6 text-slate-800 placeholder-slate-400 transition-all focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 font-medium shadow-sm"
                         />
                     </div>
                 </div>

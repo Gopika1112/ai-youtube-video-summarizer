@@ -174,7 +174,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
     }
 
     return (
-        <div className="max-w-5xl mx-auto w-full px-6">
+        <div className="max-w-5xl mx-auto w-full px-6 min-h-[80vh] flex flex-col justify-center">
             <AnimatePresence mode="wait">
                 {!result && !loading ? (
                     <motion.div
@@ -182,90 +182,75 @@ export default function SummarizerForm({ onSubmit }: Props) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="py-12 md:py-24"
+                        className="py-12"
                     >
-                        <div className="text-center space-y-8 mb-16">
+                        {/* Header Section */}
+                        <div className="text-center space-y-6 mb-12">
                             <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-black uppercase tracking-[0.2em]"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center justify-center gap-3 text-blue-500"
                             >
-                                <Sparkles size={14} /> Intelligence Port
+                                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                                    <Youtube size={32} />
+                                </div>
+                                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-800">
+                                    YouTube Summarizer
+                                </h1>
                             </motion.div>
-                            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none">
-                                Synthesize <span className="text-blue-500">Knowledge</span>
-                            </h1>
-                            <p className="text-[#a8a29e] text-xl max-w-2xl mx-auto font-medium leading-relaxed">
-                                Deploy our AI agents to extract strategic insights and key takeaways from any video stream.
-                            </p>
                         </div>
 
+                        {/* Input Section */}
                         <form onSubmit={handleSubmit} className="relative max-w-3xl mx-auto">
-                            <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-[32px] blur opacity-25 group-focus-within:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                                <div className="relative flex items-center bg-[#0f172a] border border-[#1e293b] rounded-[28px] overflow-hidden p-2 pl-6 focus-within:border-blue-500/50 transition-all">
-                                    <div className="text-slate-500 group-focus-within:text-blue-500 transition-colors">
-                                        <Youtube size={28} />
-                                    </div>
-                                    <input
-                                        type="url"
-                                        placeholder="Enter YouTube URL: https://youtube.com/watch?v=..."
-                                        className="w-full bg-transparent border-none py-6 px-6 text-white placeholder-[#3d342d] outline-none font-medium text-lg"
-                                        value={url}
-                                        onChange={(e) => setUrl(e.target.value)}
-                                    />
-                                    <div className="flex items-center gap-2 border-l border-white/5 pl-6 pr-4">
-                                        <Globe size={20} className="text-slate-600" />
-                                        <select 
-                                            value={targetLanguage}
-                                            onChange={(e) => setTargetLanguage(e.target.value)}
-                                            className="bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
-                                        >
-                                            {LANGUAGES.map(lang => (
-                                                <option key={lang.code} value={lang.code} className="bg-[#0f172a]">{lang.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={!url.trim()}
-                                        className="bg-white text-black font-black h-16 px-10 rounded-[22px] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center gap-2 text-lg shadow-xl"
-                                    >
-                                        Extract <ArrowRight size={20} />
-                                    </button>
+                            <div className="relative flex items-center bg-white border border-slate-200 rounded-full shadow-sm hover:shadow-md transition-all focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500/50 p-1.5 pl-6 group">
+                                <div className="text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                                    <Youtube size={24} />
                                 </div>
+                                <input
+                                    type="url"
+                                    placeholder="Paste YouTube video URL here..."
+                                    className="w-full bg-transparent border-none py-4 px-4 text-slate-700 placeholder-slate-400 outline-none font-medium text-lg"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                />
+                                
+                                <div className="flex items-center gap-2 border-l border-slate-100 pl-4 pr-2">
+                                    <select 
+                                        value={targetLanguage}
+                                        onChange={(e) => setTargetLanguage(e.target.value)}
+                                        className="bg-transparent text-sm font-semibold text-slate-600 outline-none cursor-pointer appearance-none px-2"
+                                    >
+                                        {LANGUAGES.map(lang => (
+                                            <option key={lang.code} value={lang.code} className="bg-white">{lang.label}</option>
+                                        ))}
+                                    </select>
+                                    <Globe size={18} className="text-slate-400" />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={!url.trim()}
+                                    className="bg-blue-400 hover:bg-blue-500 text-white font-bold h-12 px-8 rounded-full transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm whitespace-nowrap"
+                                >
+                                    <Sparkles size={18} /> Summarize
+                                </button>
                             </div>
+
+                            {/* Center-aligned Subtitle */}
+                            <p className="mt-6 text-slate-400 text-center font-medium">
+                                Try it with any YouTube video! Just paste the URL and let AI do the magic ✨
+                            </p>
+
                             {error && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="mt-6 flex items-center gap-2 text-red-400 font-bold bg-red-500/5 border border-red-500/10 p-4 rounded-2xl justify-center"
+                                    className="mt-8 flex items-center gap-2 text-red-500 font-medium bg-red-50 border border-red-100 p-4 rounded-2xl justify-center text-sm"
                                 >
                                     <Zap size={16} /> {error}
                                 </motion.div>
                             )}
                         </form>
-                        
-                        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] text-center">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
-                                    <Zap size={20} className="text-blue-500" />
-                                </div>
-                                Real-time synthesis
-                            </div>
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
-                                    <BrainCircuit size={20} className="text-indigo-400" />
-                                </div>
-                                Neural Analysis
-                            </div>
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
-                                    <RefreshCw size={20} className="text-teal-400" />
-                                </div>
-                                Persistent Vault
-                            </div>
-                        </div>
                     </motion.div>
                 ) : loading ? (
                     <motion.div

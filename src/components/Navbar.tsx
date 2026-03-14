@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { LogOut, History, PlusCircle } from 'lucide-react'
+import { LogOut, History, PlusCircle, Youtube } from 'lucide-react'
 
 interface Props {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,94 +19,55 @@ export default function Navbar({ user, onSignOut }: Props) {
 
     return (
         <motion.div 
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
             initial={false}
-            animate={{ width: isHovered ? 288 : 80 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 h-full bg-[#0f172a]/80 backdrop-blur-2xl border-r border-white/5 z-[100] p-4 flex flex-col overflow-hidden"
+            animate={{ width: 80 }}
+            className="fixed top-0 left-0 h-full bg-white border-r border-slate-100 z-[100] p-4 flex flex-col items-center overflow-hidden"
         >
             {/* Brand/Logo */}
             <div className="mb-12">
-                <Link href="/" className="flex items-center gap-4 p-2 rounded-2xl transition-all h-12">
-                    <div className="min-w-[48px] h-[48px] bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 shrink-0">
-                        ▶
+                <Link href="/" className="flex items-center justify-center p-2 rounded-2xl transition-all h-12">
+                    <div className="min-w-[40px] h-[40px] bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shrink-0">
+                        <Youtube size={24} />
                     </div>
-                    <motion.div 
-                        animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-                        className="whitespace-nowrap overflow-hidden"
-                    >
-                        <div className="text-white font-black text-sm tracking-tight leading-none mb-1">NEURAL</div>
-                        <div className="text-blue-500 font-black text-sm tracking-tight leading-none uppercase">Archive</div>
-                    </motion.div>
                 </Link>
             </div>
 
             {/* Navigation Items */}
-            <div className="flex flex-col gap-3 flex-1">
-                {!user ? (
-                    <Link
-                        href="/"
-                        className="flex items-center gap-4 p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-bold text-sm border border-transparent"
+            <div className="flex flex-col gap-8 flex-1 items-center">
+                <Link
+                    href="/dashboard"
+                    className={`flex items-center justify-center p-3 rounded-xl transition-all font-bold text-sm h-12 w-12 ${
+                        pathname === '/dashboard' 
+                        ? 'bg-blue-50 text-blue-500' 
+                        : 'text-slate-400 hover:text-blue-500 hover:bg-slate-50'
+                    }`}
+                >
+                    <PlusCircle size={24} className="shrink-0" />
+                </Link>
+                <Link
+                    href="/dashboard/history"
+                    className={`flex items-center justify-center p-3 rounded-xl transition-all font-bold text-sm h-12 w-12 ${
+                        pathname === '/dashboard/history' 
+                        ? 'bg-blue-50 text-blue-500' 
+                        : 'text-slate-400 hover:text-blue-500 hover:bg-slate-50'
+                    }`}
+                >
+                    <History size={24} className="shrink-0" />
+                </Link>
+                
+                <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col items-center gap-6">
+                   <button
+                        onClick={onSignOut}
+                        className="flex items-center justify-center p-3 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all h-12 w-12"
                     >
-                        <PlusCircle size={24} className="text-blue-500 shrink-0" />
-                        <motion.span animate={{ opacity: isHovered ? 1 : 0 }}>Sign Up</motion.span>
-                    </Link>
-                ) : (
-                    <>
-                        <Link
-                            href="/dashboard"
-                            className={`flex items-center gap-4 p-4 rounded-2xl transition-all font-bold text-sm border h-14 ${
-                                pathname === '/dashboard' 
-                                ? 'bg-blue-600/10 border-blue-600/20 text-blue-500' 
-                                : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'
-                            }`}
-                        >
-                            <PlusCircle size={24} className="shrink-0" />
-                            <motion.span animate={{ opacity: isHovered ? 1 : 0 }} className="whitespace-nowrap">New Summary</motion.span>
-                        </Link>
-                        <Link
-                            href="/dashboard/history"
-                            className={`flex items-center gap-4 p-4 rounded-2xl transition-all font-bold text-sm border h-14 ${
-                                pathname === '/dashboard/history' 
-                                ? 'bg-blue-600/10 border-blue-600/20 text-blue-500' 
-                                : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'
-                            }`}
-                        >
-                            <History size={24} className="shrink-0" />
-                            <motion.span animate={{ opacity: isHovered ? 1 : 0 }} className="whitespace-nowrap">History</motion.span>
-                        </Link>
-                        
-                        <div className="mt-auto pt-6 border-t border-white/5 space-y-4 overflow-hidden">
-                           <div className="px-2">
-                                <motion.div animate={{ opacity: isHovered ? 1 : 0 }} className="text-[8px] uppercase tracking-[0.3em] text-slate-600 font-black mb-1 whitespace-nowrap">Active Intelligence</motion.div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shrink-0 flex items-center justify-center font-bold text-xs text-white">
-                                        {displayName[0].toUpperCase()}
-                                    </div>
-                                    <motion.div animate={{ opacity: isHovered ? 1 : 0 }} className="text-white font-bold truncate text-sm">{displayName}</motion.div>
-                                </div>
-                           </div>
-                           
-                           <button
-                                onClick={onSignOut}
-                                className="w-full flex items-center gap-4 p-4 rounded-2xl text-red-400/70 hover:text-red-400 hover:bg-red-400/5 transition-all font-bold text-sm"
-                            >
-                                <LogOut size={24} className="shrink-0" />
-                                <motion.span animate={{ opacity: isHovered ? 1 : 0 }}>Sign Out</motion.span>
-                            </button>
-                        </div>
-                    </>
-                )}
+                        <LogOut size={24} className="shrink-0" />
+                    </button>
+                    
+                    <div className="w-10 h-10 rounded-full bg-slate-100 shrink-0 flex items-center justify-center font-bold text-xs text-slate-600 border border-slate-200">
+                        {displayName[0].toUpperCase()}
+                    </div>
+                </div>
             </div>
-            
-            {/* Version Info */}
-            <motion.div 
-                animate={{ opacity: isHovered ? 0.3 : 0 }}
-                className="mt-8 text-[8px] font-black uppercase tracking-[0.4em] text-slate-500 text-center whitespace-nowrap"
-            >
-                v2.8 Neural Core
-            </motion.div>
         </motion.div>
     )
 }
