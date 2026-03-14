@@ -8,9 +8,11 @@ import json
 
 app = Flask(__name__)
 
-# --- CORS CONFIGURATION ---
-# Replace the origin with your actual Vercel domain
-CORS(app, resources={r"/*": {"origins": ["https://ai-youtube-video-summarizer.vercel.app", "http://localhost:3000"]}})
+CORS(app, resources={r"/*": {"origins": [
+    "https://ai-youtube-video-summarizer.vercel.app", 
+    "https://ai-youtube-video-summarizer-1f33wzzxl-gopika1112s-projects.vercel.app",
+    "http://localhost:3000"
+]}})
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
