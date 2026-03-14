@@ -3,8 +3,8 @@ from flask_cors import CORS
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 import os
-import google.generativeai as genai
 import json
+from google import genai
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -85,32 +85,6 @@ def summarize():
         
         if not api_key:
             return jsonify({"error": "GEMINI_API_KEY not found in server environment"}), 500
-            
-        genai.configure(api_key=api_key)
-        
-        # Try multiple models in case one is restricted or not found
-        models_to_try = [
-            'gemini-2.0-flash',
-            'gemini-1.5-flash',
-            'gemini-1.5-flash-latest',
-        ]
-        
-        model = None
-        last_gen_error = None
-        
-        for model_name in models_to_try:
-            try:
-                print(f"Checking model {model_name}...")
-                model = genai.GenerativeModel(model_name)
-                # We don't verify here to save latency, fallback system will handle errors
-                break 
-            except Exception as e:
-                print(f"Model {model_name} initialization failed: {e}")
-                last_gen_error = e
-                continue
-        
-        if not model:
-            raise Exception(f"Failed to initialize any Gemini models. Last error: {last_gen_error}")
 
         prompt = f"""
         Summarize the following YouTube video transcript.
@@ -124,11 +98,30 @@ def summarize():
         - key_moments: A list of objects with 'title', 'description', and 'timestamp' (float).
         
         Transcript:
-        {full_transcript[:15000]}  # Slightly higher limit for better quality
+        {full_transcript[:15000]}
         """
         
         try:
-            response = model.generate_content(prompt)
+            # New google-genai SDK (v1.0+) — Python 3.14 compatible
+            client = genai.Client(api_key=api_key)
+            models_to_try = ['gemini-2.0-flash', 'gemini-1.5-flash']
+            response = None
+            last_err = None
+            for model_name in models_to_try:
+                try:
+                    print(f"Trying model {model_name}...")
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt
+                    )
+                    print(f"Model {model_name} succeeded!")
+                    break
+                except Exception as e:
+                    print(f"Model {model_name} failed: {e}")
+                    last_err = e
+                    continue
+            if response is None:
+                raise last_err
             summary_data = json.loads(_extract_json(response.text))
         except Exception as e:
             # --- GROQ FALLBACK ---
