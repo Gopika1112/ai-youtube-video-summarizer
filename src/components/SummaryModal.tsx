@@ -68,31 +68,91 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
 
         setLoading(true)
         try {
-            const res = await fetch(`/api/translate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    text: JSON.stringify(summary),
-                    targetLanguage 
+            const translateSection = async (data: any) => {
+                const res = await fetch(`/api/translate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: JSON.stringify(data), targetLanguage })
                 })
-            })
-            
-            if (!res.ok) {
-                const data = await res.json()
-                throw new Error(data.error)
+                const d = await res.json()
+                if (!res.ok) throw new Error(d.error || 'Section translation failed')
+                return d.translatedData
             }
 
-            const data = await res.json()
-            setTranslatedText(data.translatedText)
+            const getVal = (res: any, key: string) => {
+                if (res && typeof res === 'object' && res[key]) return res[key];
+                return typeof res === 'string' ? res : '';
+            }
+
+            // Sequential translation to respect API rate limits
+            // Section 0: Labels
+            const labelsInput = {
+                executive_summary: "Executive Summary",
+                key_takeaways: "Key Takeaways",
+                detailed_analysis: "Detailed Analysis",
+                strategic_insights: "Strategic Insights",
+                knowledge_timeline: "Knowledge Timeline",
+                ai_intelligence_report: "AI Intelligence Report",
+                generated_on: "Generated on",
+                source: "Source",
+                confidential: "Confidential • AI Generated"
+            };
+            const translatedLabels = await translateSection(labelsInput);
+
+            // Section 1: Meta
+            const meta = await translateSection({ short_summary: summary.short_summary });
+            
+            // Section 2: Takeaways
+            const takeawayList = [];
+            for (const t of summary.key_takeaways) {
+                const r = await translateSection({ t });
+                takeawayList.push(getVal(r, 't'));
+            }
+            
+            // Section 3: Insights
+            const insightList = [];
+            for (const ins of summary.important_insights) {
+                const r = await translateSection({ ins });
+                insightList.push(getVal(r, 'ins'));
+            }
+            
+            // Section 4: Moments
+            const momentList = [];
+            for (const m of summary.key_moments) {
+                const [tRes, dRes] = await Promise.all([
+                    translateSection({ title: m.title }),
+                    translateSection({ description: m.description })
+                ]);
+                momentList.push({ 
+                    title: getVal(tRes, 'title'), 
+                    description: getVal(dRes, 'description'), 
+                    timestamp: m.timestamp 
+                });
+            }
+            
+            // Section 5: Structural Summary
+            const parts = summary.detailed_summary.split('\n\n').filter(Boolean);
+            const transParts = [];
+            for (const p of parts) {
+                const r = await translateSection({ p });
+                transParts.push(getVal(r, 'p'));
+            }
+            const structuralText = transParts.join('\n\n');
+
+            const finalTranslatedObj = {
+                short_summary: getVal(meta, 'short_summary'),
+                detailed_summary: structuralText,
+                key_takeaways: takeawayList,
+                important_insights: insightList,
+                key_moments: momentList,
+                labels: translatedLabels // Store translated labels
+            }
+
+            setTranslatedText(JSON.stringify(finalTranslatedObj))
             showToast(`Translated to ${targetLanguage}`, 'success')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error(err)
-            if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError') {
-                showToast('Server is currently unavailable. Please try again later.', 'error')
-            } else {
-                showToast(err.message || 'Translation failed', 'error')
-            }
+            showToast(err.message || 'Translation failed', 'error')
         } finally {
             setLoading(false)
         }
@@ -136,7 +196,8 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                 detailed_summary: currentDetailed,
                 key_takeaways: currentTakeaways,
                 important_insights: currentInsights,
-                key_moments: currentMoments
+                key_moments: currentMoments,
+                labels: translatedText ? JSON.parse(translatedText).labels : undefined
             }
 
             // High-fidelity capture (preserves Hindi visually)
@@ -175,7 +236,7 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                 initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                className="w-full max-w-4xl bg-bg-secondary border border-white/10 rounded-[32px] overflow-hidden shadow-2xl shadow-purple-500/10"
+                className="w-full max-w-4xl bg-[#0f172a] border border-white/5 rounded-[32px] overflow-hidden shadow-2xl shadow-blue-500/10"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header Section */}
@@ -240,14 +301,14 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                     <motion.button
                         whileHover={{ y: -2 }}
                         onClick={handleCopyAll}
-                        className="btn-secondary py-2 px-6 rounded-xl text-sm"
+                        className="btn-secondary py-2 px-6 rounded-xl text-sm bg-white/5 border-white/10 hover:bg-white/10"
                     >
                         <Copy size={16} /> Export Markdown
                     </motion.button>
                     <motion.button
                         whileHover={{ y: -2 }}
                         onClick={handleDownloadPDF}
-                        className="btn-secondary py-2 px-6 rounded-xl text-sm border-accent-blue/20 text-accent-blue hover:bg-accent-blue/10"
+                        className="btn-secondary py-2 px-6 rounded-xl text-sm border-blue-500/20 text-blue-400 hover:bg-blue-500/10"
                     >
                         <Download size={16} /> Full PDF Report
                     </motion.button>
@@ -322,11 +383,11 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                 </div>
 
                 {/* Main Content Area */}
-                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar bg-bg-secondary">
+                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar bg-[#0f172a]">
                     <div 
                         ref={contentRef} 
                         data-pdf-content="true"
-                        className="p-10 bg-bg-secondary"
+                        className="p-10 bg-[#0f172a]"
                     >
                         {activeTab === 'chat' ? (
                             <motion.div
@@ -369,10 +430,10 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                             whileInView={{ opacity: 1, y: 0 }}
                         >
                         <div className="flex items-center gap-3 mb-6">
-                            <Layout className="text-accent-purple" size={20} />
-                            <h3 className="text-lg font-black font-display uppercase tracking-widest text-accent-purple/80">Executive Summary</h3>
+                            <Layout className="text-blue-500" size={20} />
+                            <h3 className="text-lg font-black font-display uppercase tracking-widest text-blue-500/80">Executive Summary</h3>
                         </div>
-                        <div className="p-8 bg-blue-500/5 border border-blue-500/10 rounded-3xl text-lg text-slate-300 leading-relaxed font-medium">
+                        <div className="p-8 bg-blue-500/5 border border-white/5 rounded-3xl text-lg text-slate-300 leading-relaxed font-medium">
                             {currentSummary}
                         </div>
                     </motion.section>
@@ -484,7 +545,7 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                                     <Globe className="text-blue-500" size={20} />
                                     <h3 className="text-lg font-black font-display uppercase tracking-widest text-blue-500/80">{targetLanguage} Translation</h3>
                                 </div>
-                                <div className="p-8 bg-blue-500/5 border border-blue-500/10 rounded-3xl text-lg text-slate-300 leading-relaxed font-medium">
+                                <div className="p-8 bg-blue-500/5 border border-white/5 rounded-3xl text-lg text-slate-300 leading-relaxed font-medium">
                                     {/* Handle both JSON and Raw Text formats */}
                                     {(() => {
                                         try {

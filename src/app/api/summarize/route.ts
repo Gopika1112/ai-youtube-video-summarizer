@@ -17,16 +17,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No URL provided' }, { status: 400 })
         }
 
-        // --- PROXY TO RENDER BACKEND ---
-        const RENDER_BACKEND_URL = "https://youtube-summarizer-backend-8k4t.onrender.com/summarize"
+        // --- PROXY TO BACKEND ---
+        // Dynamically use the environment variable for the backend URL
+        const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-summarizer-backend-8k4t.onrender.com"
+        const SUMMARIZE_ENDPOINT = `${BACKEND_BASE_URL.replace(/\/$/, '')}/summarize`
         
-        console.log(`[PROXY] Sending request to Render: ${videoUrl}`)
+        console.log(`[PROXY] Sending request to Backend: ${SUMMARIZE_ENDPOINT} for URL: ${videoUrl}`)
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
         try {
-            const response = await fetch(RENDER_BACKEND_URL, {
+            const response = await fetch(SUMMARIZE_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: videoUrl }),

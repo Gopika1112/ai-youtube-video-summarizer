@@ -105,60 +105,81 @@ export default function SummarizerForm({ onSubmit }: Props) {
                             return chunks
                         }
 
-                        console.log(`[AUTO-TRANSLATE] Starting speed-optimized processing for ${targetLanguage}...`)
+                        console.log(`[AUTO-TRANSLATE] Starting speed-optimized sequential processing for ${targetLanguage}...`)
                         
-                        // Execute all sections in parallel
-                        const [metaRes, takeawaysRes, insightsRes, momentsRes, translatedDetailed] = await Promise.all([
-                            // Section 1: Meta
-                            translateChunk({ short_summary: summary.short_summary }),
-                            
-                            // Section 2: Takeaways
-                            Promise.all(summary.key_takeaways.map(async (t: string) => {
-                                const res = await translateChunk({ t });
-                                return res.t;
-                            })),
-                            
-                            // Section 3: Insights
-                            Promise.all(summary.important_insights.map(async (ins: string) => {
-                                const res = await translateChunk({ ins });
-                                return res.ins;
-                            })),
-                            
-                            // Section 4: Moments
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            Promise.all((summary.key_moments as any[]).map(async (m) => {
-                                const [tRes, dRes] = await Promise.all([
-                                    translateChunk({ title: m.title }),
-                                    translateChunk({ description: m.description })
-                                ]);
-                                return { 
-                                    title: tRes.title, 
-                                    description: dRes.description, 
-                                    timestamp: m.timestamp 
-                                };
-                            })),
-                            
-                            // Section 5: Detailed Summary
-                            (async () => {
-                                const paragraphs = summary.detailed_summary.split('\n\n').filter(p => p.trim());
-                                const res = await Promise.all(paragraphs.map(async (p) => {
-                                    const r = await translateChunk({ p });
-                                    return r.p;
-                                }));
-                                return res.join('\n\n');
-                            })()
-                        ]);
+                        // Helper to safely extract value from potentially non-JSON response
+                        const getVal = (res: any, key: string) => {
+                            if (res && typeof res === 'object' && res[key]) return res[key];
+                            return typeof res === 'string' ? res : '';
+                        }
+
+                        // Use sequential processing to avoid hitting Gemini rate limits
+                        // Section 0: Labels
+                        const labelsInput = {
+                            executive_summary: "Executive Summary",
+                            key_takeaways: "Key Takeaways",
+                            detailed_analysis: "Detailed Analysis",
+                            strategic_insights: "Strategic Insights",
+                            knowledge_timeline: "Knowledge Timeline",
+                            ai_intelligence_report: "AI Intelligence Report",
+                            generated_on: "Generated on",
+                            source: "Source",
+                            confidential: "Confidential • AI Generated"
+                        };
+                        const labelsRes = await translateChunk(labelsInput);
+
+                        // Section 1: Meta
+                        const metaRes = await translateChunk({ short_summary: summary.short_summary });
+                        
+                        // Section 2: Takeaways
+                        const takeawaysRes = [];
+                        for (const t of summary.key_takeaways) {
+                            const res = await translateChunk({ t });
+                            takeawaysRes.push(getVal(res, 't'));
+                        }
+                        
+                        // Section 3: Insights
+                        const insightsRes = [];
+                        for (const ins of summary.important_insights) {
+                            const res = await translateChunk({ ins });
+                            insightsRes.push(getVal(res, 'ins'));
+                        }
+                        
+                        // Section 4: Moments
+                        const momentsRes = [];
+                        for (const m of (summary.key_moments as any[])) {
+                            const [tRes, dRes] = await Promise.all([
+                                translateChunk({ title: m.title }),
+                                translateChunk({ description: m.description })
+                            ]);
+                            momentsRes.push({ 
+                                title: getVal(tRes, 'title'), 
+                                description: getVal(dRes, 'description'), 
+                                timestamp: m.timestamp 
+                            });
+                        }
+                        
+                        // Section 5: Detailed Summary
+                        const paragraphs = summary.detailed_summary.split('\n\n').filter(p => p.trim());
+                        const transParts = [];
+                        for (const p of paragraphs) {
+                            const r = await translateChunk({ p });
+                            transParts.push(getVal(r, 'p'));
+                        }
+                        const translatedDetailed = transParts.join('\n\n');
 
                         setResult({ 
                             ...summary, 
-                            short_summary: metaRes.short_summary,
+                            short_summary: getVal(metaRes, 'short_summary'),
                             detailed_summary: translatedDetailed,
                             key_takeaways: takeawaysRes,
                             important_insights: insightsRes,
-                            key_moments: momentsRes
-                        })
-                    } catch (transErr) {
+                            key_moments: momentsRes,
+                            labels: labelsRes // Store labels in the state
+                        } as any)
+                    } catch (transErr: any) {
                         console.error('[AUTO-TRANSLATE] Failed:', transErr)
+                        setError(transErr.message || 'Auto-translation encountered an issue')
                         setResult(summary) // Fallback to original
                     }
                 } else {

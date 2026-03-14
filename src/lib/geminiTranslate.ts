@@ -14,10 +14,9 @@ export async function translateText(text: string, targetLanguage: string) {
   // Try Gemini First (If Key Exists)
   if (geminiKey && geminiKey !== 'dummy_key') {
     const models = [
-      "models/gemini-2.5-flash",
       "models/gemini-2.0-flash", 
       "models/gemini-1.5-flash", 
-      "models/gemini-2.5-pro",
+      "models/gemini-1.5-flash-8b",
     ];
     
     for (const modelName of models) {
@@ -25,12 +24,18 @@ export async function translateText(text: string, targetLanguage: string) {
         console.log(`[GEMINI] Attempting translation with model: ${modelName} for ${targetLanguage}`);
         const model = genAI.getGenerativeModel({ model: modelName });
 
-        const prompt = `Translate the following English text to ${targetLanguage}. 
-        Only return the translated ${targetLanguage} text.
+        const prompt = `You are a specialized JSON translation engine.
+        Translate the values in the following JSON object to ${targetLanguage}.
         
-        IMPORTANT: If the input is a JSON string, translate the values but preserve the JSON structure and keys exactly.
-
-        Text:
+        CRITICAL RULES:
+        1. Return ONLY the valid RAW JSON object. 
+        2. DO NOT include any markdown code blocks (e.g., \`\`\`json).
+        3. Do not include any conversational text.
+        4. Keep all keys exactly as they are.
+        5. Do not add any new keys.
+        6. Translate the text naturally but accurately.
+        
+        Input to translate:
         ${text}`;
 
         const result = await model.generateContent(prompt);
