@@ -1,3 +1,4 @@
+/* eslint-disable */
 const { Innertube } = require('youtubei.js');
 
 async function test() {

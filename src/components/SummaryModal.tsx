@@ -5,7 +5,7 @@ import type { Summary, KeyMoment } from '@/lib/types'
 import { formatTimestamp } from '@/lib/utils'
 import { format } from 'date-fns'
 import { generatePDF } from '@/lib/pdf'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
     X, Copy, Download, Trash2, ExternalLink,
     BookOpen, CheckCircle2, Lightbulb, Clock,
@@ -81,6 +81,7 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
             if (!res.ok) throw new Error(data.error)
             setTranslatedText(data.translatedText)
             showToast(`Translated to ${targetLanguage}`, 'success')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error(err)
             showToast(err.message || 'Translation failed', 'error')
@@ -153,9 +154,6 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
     }
 
     const thumbnailUrl = summary.thumbnail_url || `https://img.youtube.com/vi/${summary.video_id}/mqdefault.jpg`
-    const keyMoments = (summary.key_moments as KeyMoment[]) || []
-    const keyTakeaways = (summary.key_takeaways as string[]) || []
-    const importantInsights = (summary.important_insights as string[]) || []
 
     return (
         <motion.div

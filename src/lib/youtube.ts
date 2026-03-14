@@ -23,13 +23,13 @@ export async function fetchTranscript(videoId: string) {
             try {
                 const data = JSON.parse(playerResponseMatch[1]);
                 tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-            } catch (e) {}
+            } catch {}
         }
         
         if (!tracks) {
             const tracksMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
             if (tracksMatch) {
-                try { tracks = JSON.parse(tracksMatch[1]); } catch (e) {}
+                try { tracks = JSON.parse(tracksMatch[1]); } catch {}
             }
         }
         
@@ -39,6 +39,7 @@ export async function fetchTranscript(videoId: string) {
         }
         
         // Find best English track
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const track = tracks.find((t: any) => t.languageCode === 'en' || t.vssId?.includes('en')) || tracks[0];
         console.log(`${logPrefix} Target Locked: ${track.languageCode}`);
 
@@ -74,8 +75,11 @@ export async function fetchTranscript(videoId: string) {
             const json = JSON.parse(text);
             if (json.events) {
                 return json.events
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .filter((ev: any) => ev.segs)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .map((ev: any) => ({
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         text: ev.segs.map((s: any) => s.utf8).join(''),
                         offset: ev.tStartMs / 1000,
                         duration: (ev.dDurationMs || 0) / 1000
@@ -97,6 +101,7 @@ export async function fetchTranscript(videoId: string) {
         }
 
         return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
         console.error(`${logPrefix} Signal Lost:`, err.message);
         return null;

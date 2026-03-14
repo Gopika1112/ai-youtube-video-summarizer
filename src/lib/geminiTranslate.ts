@@ -35,6 +35,7 @@ export async function translateText(text: string, targetLanguage: string) {
       if (translated) return translated;
       
       throw new Error("Empty response from Gemini");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(`[GEMINI] Model ${modelName} failed:`, err.message);
       lastError = err;

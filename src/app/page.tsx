@@ -1,14 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
-  Youtube,
-  ArrowRight,
   Zap,
-  Shield,
-  Search,
-  Sparkles,
   BrainCircuit,
   Clock
 } from 'lucide-react'
@@ -16,7 +10,7 @@ import { motion } from 'framer-motion'
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+
 
   const handleLogin = async () => {
     setLoading(true)

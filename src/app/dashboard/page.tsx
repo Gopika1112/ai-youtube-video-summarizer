@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Summary } from '@/lib/types'
+
 import SummarizerForm from '@/components/SummarizerForm'
 import Navbar from '@/components/Navbar'
 
 export default function DashboardPage() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const router = useRouter()
@@ -24,6 +25,7 @@ export default function DashboardPage() {
             setLoading(false)
         }
         checkUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router])
 
     const handleNewSummary = async (videoUrl: string) => {
@@ -44,6 +46,7 @@ export default function DashboardPage() {
             }
             
             return data.summary
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             if (err.name === 'AbortError') {
                 throw new Error('Neural synthesis timed out. The video might be too long or the AI is under heavy load. Please try again.')

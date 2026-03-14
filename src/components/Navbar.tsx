@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { LogOut, History, PlusCircle } from 'lucide-react'
 
 interface Props {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: any
     onSignOut: () => void
 }

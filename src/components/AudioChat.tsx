@@ -22,6 +22,7 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
     const [isSpeaking, setIsSpeaking] = useState(false)
     const [isPaused, setIsPaused] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null)
 
     useEffect(() => {
@@ -32,6 +33,7 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
 
     useEffect(() => {
         // Initialize Speech Recognition
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
         if (SpeechRecognition) {
             recognitionRef.current = new SpeechRecognition()
@@ -39,6 +41,7 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
             recognitionRef.current.interimResults = false
             recognitionRef.current.lang = 'en-US'
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             recognitionRef.current.onresult = (event: any) => {
                 const transcript = event.results[0][0].transcript
                 setInput(transcript)
@@ -59,6 +62,7 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
         return () => {
             window.speechSynthesis.cancel()
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const toggleListening = () => {
@@ -155,7 +159,7 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
                 {messages.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
                         <MessageSquare size={48} className="text-blue-500" />
-                        <p className="text-sm font-medium">Ask me anything about "${videoTitle}"</p>
+                        <p className="text-sm font-medium">Ask me anything about &quot;{videoTitle}&quot;</p>
                         <p className="text-[10px] font-black uppercase tracking-widest">Audio input enabled</p>
                     </div>
                 )}

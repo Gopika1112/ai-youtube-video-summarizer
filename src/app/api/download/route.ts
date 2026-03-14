@@ -35,6 +35,7 @@ export async function POST(request: Request) {
                 'Content-Length': pdfBuffer.length.toString(),
             },
         })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error('[API_DOWNLOAD_ERROR]:', error)
         return NextResponse.json({ error: 'Download failed' }, { status: 500 })

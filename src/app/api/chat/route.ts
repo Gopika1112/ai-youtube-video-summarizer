@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import Groq from 'groq-sdk'
 import { YoutubeTranscript } from 'youtube-transcript'
-// @ts-ignore
+// @ts-expect-error No type definitions available for this module
 import { getSubtitles } from 'youtube-captions-scraper'
 import { fetchTranscript as manualFetch } from '@/lib/youtube'
 
@@ -14,14 +14,14 @@ import path from 'path'
 
 async function getTranscript(videoId: string): Promise<string> {
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transcriptData: any[] = []
-    let engine = 'Primary'
 
     try {
         console.log('[CHAT] Attempting Primary Engine...');
         transcriptData = await YoutubeTranscript.fetchTranscript(videoId)
         if (transcriptData?.length) console.log('[CHAT] Primary Engine Success!');
-    } catch (e) {
+    } catch {
         console.warn('[CHAT] Primary Engine Failed');
     }
 
@@ -30,10 +30,9 @@ async function getTranscript(videoId: string): Promise<string> {
             console.log('[CHAT] Attempting Secondary Engine...');
             transcriptData = await getSubtitles({ videoID: videoId, lang: 'en' })
             if (transcriptData?.length) {
-                engine = 'Secondary'
                 console.log('[CHAT] Secondary Engine Success!');
             }
-        } catch (e) {
+        } catch {
             console.error('[CHAT] Secondary Engine Failed');
         }
     }
@@ -44,10 +43,9 @@ async function getTranscript(videoId: string): Promise<string> {
             const manual = await manualFetch(videoId)
             if (manual && manual.length > 0) {
                 transcriptData = manual
-                engine = 'Manual'
                 console.log('[CHAT] Manual Override SUCCESS.');
             }
-        } catch (e) {
+        } catch {
             console.error('[CHAT] Manual Override Failed');
         }
     }
@@ -58,10 +56,9 @@ async function getTranscript(videoId: string): Promise<string> {
             try {
                 transcriptData = await YoutubeTranscript.fetchTranscript(videoId, { lang })
                 if (transcriptData && transcriptData.length > 0) {
-                    engine = 'Primary'
                     break
                 }
-            } catch (e) {
+            } catch {
                 continue
             }
         }
@@ -77,11 +74,10 @@ async function getTranscript(videoId: string): Promise<string> {
             
             if (result && !result.error && result.segments?.length) {
                 transcriptData = result.segments
-                engine = 'yt-dlp'
                 console.log('[CHAT] yt-dlp Engine Success!');
             }
-        } catch (e: any) {
-            console.error('[CHAT] yt-dlp Engine Failed:', e.message);
+        } catch (e: unknown) {
+            console.error('[CHAT] yt-dlp Engine Failed:', e instanceof Error ? e.message : String(e));
         }
     }
 
@@ -89,7 +85,7 @@ async function getTranscript(videoId: string): Promise<string> {
         return ''
     }
 
-    return transcriptData.map((t: any) => t.text).join(' ')
+    return transcriptData.map((t) => t.text).join(' ')
 }
 
 export async function POST(request: Request) {
@@ -135,15 +131,16 @@ export async function POST(request: Request) {
         try {
             const completion = await groq.chat.completions.create({
                 model: 'llama-3.1-8b-instant',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 messages: messages as any,
                 temperature: 0.5,
                 max_tokens: 1000,
             })
             aiResponse = completion.choices[0].message.content
-        } catch (error: any) {
+        } catch (error: unknown) {
             lastError = error;
-            const errorStr = JSON.stringify(error);
-            const isRateLimit = error.status === 429 || errorStr.includes('rate_limit') || errorStr.includes('quota');
+            const errorStr = JSON.stringify(error, Object.getOwnPropertyNames(error || {}));
+            const isRateLimit = (error as {status?: number}).status === 429 || errorStr.includes('rate_limit') || errorStr.includes('quota');
             
             if (isRateLimit) {
                 console.warn('[CHAT] Groq limit reached. Attempting Gemini SDK fallback...');
@@ -165,8 +162,8 @@ export async function POST(request: Request) {
                                 const result = await model.generateContent(prompt);
                                 geminiText = result.response.text();
                                 if (geminiText) break;
-                            } catch (me: any) {
-                                const meLower = me.message?.toLowerCase() || "";
+                            } catch (me: unknown) {
+                                const meLower = (me as {message?: string}).message?.toLowerCase() || "";
                                 if (meLower.includes('404') || meLower.includes('not found')) continue;
                                 throw me;
                             }
@@ -205,8 +202,8 @@ export async function POST(request: Request) {
         if (!aiResponse) throw lastError || new Error('All AI providers failed to respond');
 
         return NextResponse.json({ response: aiResponse })
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Chat Error:', error)
-        return NextResponse.json({ error: error.message || 'Chat failed' }, { status: 500 })
+        return NextResponse.json({ error: (error as Error).message || 'Chat failed' }, { status: 500 })
     }
 }

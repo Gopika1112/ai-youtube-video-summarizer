@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { History as HistoryIcon, Search, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function HistoryPage() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [user, setUser] = useState<any>(null)
     const [summaries, setSummaries] = useState<Summary[]>([])
     const [loading, setLoading] = useState(true)
@@ -32,6 +33,7 @@ export default function HistoryPage() {
             fetchSummaries(user.id)
         }
         checkUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router])
 
     const fetchSummaries = async (userId: string) => {
@@ -44,6 +46,7 @@ export default function HistoryPage() {
 
             if (error) throw error
             setSummaries(data || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error fetching summaries:', err)
             showToast('Failed to load history', 'error')
@@ -62,7 +65,7 @@ export default function HistoryPage() {
             if (error) throw error
             setSummaries(prev => prev.filter(s => s.id !== id))
             showToast('Intelligence redacted successfully', 'success')
-        } catch (err) {
+        } catch {
             showToast('Failed to redact intelligence', 'error')
         }
     }

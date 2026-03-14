@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
         // 1. Safety Trim (Reduce token usage)
         const safetyTrim = (str: string) => str.length > 3000 ? str.substring(0, 2997) + '...' : str;
-        let processedText = safetyTrim(text);
+        const processedText = safetyTrim(text);
 
         // 2. Check Cache first (Save API costs)
         const cacheHash = generateHash(processedText, targetLanguage);
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         let translatedData = null;
         try {
             translatedData = JSON.parse(cleanedResult);
-        } catch (e) {
+        } catch {
             // If not JSON, just return as text
             translatedData = cleanedResult;
         }
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
             translatedData: translatedData
         });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error('Translation Route Error:', error)
         

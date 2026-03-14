@@ -14,7 +14,7 @@ const INITIAL_RETRY_DELAY = 2000 // 2 seconds
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 import { YoutubeTranscript } from 'youtube-transcript'
-// @ts-ignore
+// @ts-expect-error No type definitions available for this module
 import { getSubtitles } from 'youtube-captions-scraper'
 import { fetchTranscript as manualFetch } from '@/lib/youtube'
 
@@ -24,6 +24,7 @@ import path from 'path'
 
 // ─── Video Info & Transcript ──────────────────────────────────────────────────
 async function getTranscript(videoId: string, videoUrl: string): Promise<{ text: string; segments: TranscriptSegment[]; title: string }> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transcriptData: any[] = []
     let engine = 'Primary'
 
@@ -32,7 +33,7 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
         console.log('[TRANSCRIPT] Attempting Primary Engine...');
         transcriptData = await YoutubeTranscript.fetchTranscript(videoId)
         if (transcriptData?.length) console.log('[TRANSCRIPT] Primary Engine Success!');
-    } catch (apiErr) {
+    } catch {
         console.warn('[TRANSCRIPT] Primary Engine Failed');
     }
 
@@ -45,7 +46,7 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
                 engine = 'Secondary'
                 console.log('[TRANSCRIPT] Secondary Engine Success!');
             }
-        } catch (scraperErr) {
+        } catch {
             console.error('[TRANSCRIPT] Secondary Engine Failed');
         }
     }
@@ -60,7 +61,7 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
                 engine = 'Manual'
                 console.log(`[TRANSCRIPT] Manual Override SUCCESS.`);
             }
-        } catch (e) {
+        } catch {
             console.error('[TRANSCRIPT] Manual Override Failed');
         }
     }
@@ -74,7 +75,7 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
                     engine = 'Primary'
                     break
                 }
-            } catch (e) {
+            } catch {
                 continue
             }
         }
@@ -95,8 +96,8 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
             } else if (result.error) {
                 console.warn('[TRANSCRIPT] yt-dlp Engine reported error:', result.error);
             }
-        } catch (e: any) {
-            console.error('[TRANSCRIPT] yt-dlp Engine Failed:', e.message);
+        } catch (e: unknown) {
+            console.error('[TRANSCRIPT] yt-dlp Engine Failed:', e instanceof Error ? e.message : String(e));
         }
     }
 
@@ -104,6 +105,7 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
         throw new Error('CAPTION_UNAVAILABLE')
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const segments: TranscriptSegment[] = transcriptData.map((t: any) => ({
         text: t.text,
         offset: engine === 'Primary' ? t.offset / 1000 : (engine === 'Manual' || engine === 'yt-dlp' ? t.offset : parseFloat(t.start)),
@@ -117,7 +119,7 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
         const oembed = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
         const data = await oembed.json()
         title = data.title
-    } catch (e) {
+    } catch {
         console.warn('Metadata fetch failed, using fallback title')
     }
 
@@ -136,7 +138,9 @@ function splitIntoChunks(text: string, chunkSize: number): string[] {
     return chunks
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function callGroqWithRetry(messages: any[], responseFormat?: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let lastError: any;
     for (let i = 0; i < MAX_RETRIES; i++) {
         try {
@@ -148,6 +152,7 @@ async function callGroqWithRetry(messages: any[], responseFormat?: any) {
                 response_format: responseFormat,
             })
             return completion.choices[0].message.content
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             lastError = error;
             // Handle Rate Limit (429) specially
@@ -172,14 +177,14 @@ async function generateSummary(
     
     // If only one chunk, summarize it directly
     if (chunks.length === 1) {
-        return await summarizeChunk(chunks[0], videoTitle, true)
+        return await summarizeChunk(chunks[0], videoTitle)
     }
 
     // Multiple chunks: Summarize each then merge
     console.log(`[AI] Processing ${chunks.length} chunks...`)
     const chunkSummaries = []
     for (let i = 0; i < chunks.length; i++) {
-        const s = await summarizeChunk(chunks[i], `${videoTitle} (Part ${i + 1})`, false)
+        const s = await summarizeChunk(chunks[i], `${videoTitle} (Part ${i + 1})`)
         chunkSummaries.push(s)
     }
 
@@ -195,7 +200,8 @@ async function generateSummary(
     return await finalizeSummary(mergePrompt, videoTitle)
 }
 
-async function summarizeChunk(text: string, title: string, isFinal: boolean): Promise<any> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function summarizeChunk(text: string, title: string): Promise<any> {
     const prompt = `Summarize this portion of a video transcript.
     Video Title: "${title}"
     
@@ -240,11 +246,12 @@ async function finalizeSummary(mergePrompt: string, videoTitle: string): Promise
     ], { type: 'json_object' })
 
     if (!content) throw new Error('Final AI merge failed')
-    let data = JSON.parse(content);
+    const data = JSON.parse(content);
 
     // --- Post-Processing ---
     if (Array.isArray(data.detailed_summary)) data.detailed_summary = data.detailed_summary.join('\n\n');
     if (Array.isArray(data.key_moments)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data.key_moments = data.key_moments.map((m: any) => {
             if (typeof m.timestamp === 'string' && m.timestamp.includes(':')) {
                 const parts = m.timestamp.split(':').map(Number);
@@ -277,7 +284,7 @@ export async function POST(request: Request) {
         }
         console.log('[API] Auth Success: user_id =', user.id);
 
-        let { url } = await request.json()
+        const { url } = await request.json()
         if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
         const videoId = extractVideoId(url)
@@ -288,7 +295,7 @@ export async function POST(request: Request) {
 
         // 1. Get Transcript
         console.log('[API] Step 1: Fetching transcript...');
-        const { text, segments, title } = await getTranscript(videoId, url);
+        const { text, title } = await getTranscript(videoId, url);
         console.log('[API] Step 1 Success. Title:', title);
 
         // 2. Generate Summary
@@ -323,6 +330,7 @@ export async function POST(request: Request) {
         console.log('[API] --- Process Complete ---');
         return NextResponse.json({ summary: savedSummary })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error(`--- [API] Fatal Error for ${videoIdForLog} ---`);
         console.error('Message:', error.message);

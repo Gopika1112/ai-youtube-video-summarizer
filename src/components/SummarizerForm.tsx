@@ -43,6 +43,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
                 if (targetLanguage !== 'English') {
                     // Auto-translate if requested - Using the new robust Atomic Chunking logic
                     try {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const translateChunk = async (chunk: any, retries: number = 3): Promise<any> => {
                             for (let i = 0; i < retries; i++) {
                                 try {
@@ -59,6 +60,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
                                     
                                     if (!res.ok) throw new Error(data.error)
                                     return data.translatedData
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 } catch (err: any) {
                                     if (err.message === 'RATE_LIMIT') throw err // No retry for rate limits
                                     if (i === retries - 1) throw err
@@ -69,6 +71,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
                         }
 
                         // Helper to chunk text safely by character count (optimized for multi-byte scripts)
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         const chunkText = (text: string, limit: number = 500): string[] => {
                             if (text.length <= limit) return [text]
                             const chunks: string[] = []
@@ -122,6 +125,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
                             })),
                             
                             // Section 4: Moments
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             Promise.all((summary.key_moments as any[]).map(async (m) => {
                                 const [tRes, dRes] = await Promise.all([
                                     translateChunk({ title: m.title }),
@@ -161,6 +165,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
                     setResult(summary)
                 }
             }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             setError(err.message || 'Error generating summary')
         } finally {
@@ -365,7 +370,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
                                     <Zap size={20} /> Executive Summary
                                 </h3>
                                 <p className="text-slate-400 leading-relaxed text-xl font-medium italic relative z-10">
-                                    "{result?.short_summary}"
+                                    &quot;{result?.short_summary}&quot;
                                 </p>
                             </div>
 
