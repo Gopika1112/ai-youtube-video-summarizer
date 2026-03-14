@@ -51,21 +51,28 @@ def summarize():
 
     try:
         # --- TRANSCRIPT EXTRACTION ---
-        # Only use youtube-transcript-api — yt-dlp triggers YouTube bot detection on cloud servers
+        # Universal implementation — works with both old and new youtube-transcript-api versions
         print(f"Fetching transcript for video ID: {video_id}...")
         try:
-            ytt = YouTubeTranscriptApi()
-            
-            # Try fetching English transcript first, then fall back to any available language
-            try:
-                fetched = ytt.fetch(video_id, languages=['en', 'en-US', 'en-GB'])
-            except Exception:
-                # Fall back to any available language
-                fetched = ytt.fetch(video_id)
-            
-            full_transcript = " ".join([item.text for item in fetched])
+            api = YouTubeTranscriptApi()
+
+            # v0.6+ uses instance method .fetch()
+            # Older versions use class method .get_transcript()
+            if hasattr(api, 'fetch'):
+                try:
+                    fetched = api.fetch(video_id, languages=['en', 'en-US', 'en-GB'])
+                except Exception:
+                    fetched = api.fetch(video_id)
+                full_transcript = " ".join([item.text for item in fetched])
+            else:
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB'])
+                except Exception:
+                    transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                full_transcript = " ".join([item['text'] for item in transcript])
+
             print(f"Transcript fetched successfully ({len(full_transcript)} chars)")
-            
+
         except NoTranscriptFound:
             return jsonify({"error": "No transcript available for this video. Please try a video with subtitles or closed captions enabled."}), 404
         except TranscriptsDisabled:
