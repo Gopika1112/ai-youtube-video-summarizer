@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 import os
 
@@ -27,7 +26,7 @@ def summarize():
         video_id = video_url
 
     try:
-        # Fetch transcript without cookies to avoid CookiesInvalid errors
+        from youtube_transcript_api import YouTubeTranscriptApi
         transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
 
         # Build full text transcript
