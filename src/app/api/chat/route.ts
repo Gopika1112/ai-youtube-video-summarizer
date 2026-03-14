@@ -127,7 +127,7 @@ export async function POST(request: Request) {
         let aiResponse = null;
         let lastError = null;
 
-        // Try Groq first
+        // Try Groq
         try {
             const completion = await groq.chat.completions.create({
                 model: 'llama-3.1-8b-instant',
@@ -139,62 +139,23 @@ export async function POST(request: Request) {
             aiResponse = completion.choices[0].message.content
         } catch (error: unknown) {
             lastError = error;
-            const errorStr = JSON.stringify(error, Object.getOwnPropertyNames(error || {}));
-            const isRateLimit = (error as {status?: number}).status === 429 || errorStr.includes('rate_limit') || errorStr.includes('quota');
+            console.error('[CHAT] Groq failed:', error);
             
-            if (isRateLimit) {
-                console.warn('[CHAT] Groq limit reached. Attempting Gemini SDK fallback...');
-                
-                // 1. Try Gemini SDK Direct
-                if (process.env.GEMINI_API_KEY) {
-                    try {
-                        const { GoogleGenerativeAI } = await import("@google/generative-ai");
-                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-                        
-                        const models = ["models/gemini-2.5-flash", "models/gemini-2.0-flash", "models/gemini-1.5-flash"];
-                        let geminiText = null;
-
-                        for (const mName of models) {
-                            try {
-                                console.log(`[CHAT-GEMINI] Attempting fallback with: ${mName}`);
-                                const model = genAI.getGenerativeModel({ model: mName });
-                                const prompt = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
-                                const result = await model.generateContent(prompt);
-                                geminiText = result.response.text();
-                                if (geminiText) break;
-                            } catch (me: unknown) {
-                                const meLower = (me as {message?: string}).message?.toLowerCase() || "";
-                                if (meLower.includes('404') || meLower.includes('not found')) continue;
-                                throw me;
-                            }
-                        }
-                        aiResponse = geminiText;
-                    } catch (geminiErr) {
-                        console.error('[CHAT] Gemini SDK failed:', geminiErr);
-                    }
-                }
-
-                // 2. Try OpenRouter if Gemini fails/missing
-                if (!aiResponse && process.env.OPENROUTER_API_KEY) {
-                    try {
-                        console.log('[CHAT] Attempting OpenRouter last-resort fallback...');
-                        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                model: 'google/gemini-flash-1.5-8b',
-                                messages: messages,
-                                temperature: 0.5
-                            })
-                        });
-                        const data = await response.json();
-                        aiResponse = data.choices?.[0]?.message?.content;
-                    } catch (fallbackErr) {
-                        console.error('[CHAT] OpenRouter fallback failed:', fallbackErr);
-                    }
+            // --- FALLBACK ENGINE: GEMINI ---
+            if (process.env.GEMINI_API_KEY) {
+                try {
+                    console.log('[CHAT] Groq limit reached. Engaging Gemini Fallback...');
+                    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+                    
+                    const prompt = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
+                    const result = await model.generateContent(prompt);
+                    aiResponse = result.response.text();
+                    
+                    if (aiResponse) console.log('[CHAT] Gemini Fallback Success.');
+                } catch (geminiErr) {
+                    console.error('[CHAT] Gemini Fallback failed:', geminiErr);
                 }
             }
         }

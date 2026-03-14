@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-summarizer-backend-8k4t.onrender.com"
         const SUMMARIZE_ENDPOINT = `${BACKEND_BASE_URL.replace(/\/$/, '')}/summarize`
         
-        console.log(`[PROXY] Cache Miss. Sending request to Backend: ${SUMMARIZE_ENDPOINT}`)
+        console.log(`[PROXY] Resolve: ${videoId} -> Target: ${SUMMARIZE_ENDPOINT}`)
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 120000); // Increased to 120s to match backend timeout
@@ -60,9 +60,11 @@ export async function POST(request: Request) {
 
             clearTimeout(timeoutId);
 
+            console.log(`[PROXY] Backend responded with status: ${response.status}`);
+
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error(`[PROXY] Render Failed (${response.status}):`, errorText)
+                console.error(`[PROXY] Backend Error (${response.status}):`, errorText)
                 
                 let errorData;
                 try {
@@ -107,18 +109,19 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ summary: savedSummary })
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
+            if (error instanceof Error && error.name === 'AbortError') {
                 return NextResponse.json({ error: 'Neural synthesis timed out. The video might be too long or the server is busy.' }, { status: 504 })
             }
             throw error;
         }
 
-    } catch (error: any) {
-        console.error('[PROXY] Fatal Error:', error.message)
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('[PROXY] Fatal Error:', err.message)
         return NextResponse.json({ 
-            error: error.message || 'The synthesis server is currently under heavy load or warming up.' 
+            error: err.message || 'The synthesis server is currently under heavy load or warming up.' 
         }, { status: 500 })
     }
 }
