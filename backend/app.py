@@ -101,7 +101,7 @@ def get_transcript_and_metadata(video_id):
     """Unified logic to get transcript or description with caching."""
     if video_id in TRANSCRIPT_CACHE:
         logger.info(f"Cache hit for {video_id}")
-        return TRANSCRIPT_CACHE[video_id], "cached"
+        return TRANSCRIPT_CACHE[video_id]
 
     # Try transcript first
     content = fetch_transcript_with_backoff(video_id)
