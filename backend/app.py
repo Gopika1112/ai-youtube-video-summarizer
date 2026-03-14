@@ -27,15 +27,8 @@ def summarize():
         video_id = video_url
 
     try:
-        # Load cookies if they exist
-        cookies_path = os.path.join(os.path.dirname(__file__), "cookies.txt")
-        
-        if os.path.exists(cookies_path):
-            print(f"Loading cookies from {cookies_path}...")
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id, cookies=cookies_path)
-        else:
-            print("No cookies.txt found. Trying without cookies...")
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        # Fetch transcript without cookies to avoid CookiesInvalid errors
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
 
         # Build full text transcript
         full_transcript = " ".join([t['text'] for t in transcript_list])
