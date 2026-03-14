@@ -124,8 +124,7 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
         handleStopSpeech()
 
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-            const res = await fetch(`${API_URL}/api/chat`, {
+            const res = await fetch(`/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

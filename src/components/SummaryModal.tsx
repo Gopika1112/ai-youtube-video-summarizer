@@ -68,8 +68,7 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
 
         setLoading(true)
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-            const res = await fetch(`${API_URL}/api/translate`, {
+            const res = await fetch(`/api/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 

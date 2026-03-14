@@ -45,10 +45,9 @@ export default function SummarizerForm({ onSubmit }: Props) {
                     try {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const translateChunk = async (chunk: any, retries: number = 3): Promise<any> => {
-                            const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
                             for (let i = 0; i < retries; i++) {
                                 try {
-                                    const res = await fetch(`${API_URL}/api/translate`, {
+                                    const res = await fetch(`/api/translate`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ text: JSON.stringify(chunk), targetLanguage })

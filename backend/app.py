@@ -28,19 +28,58 @@ def summarize():
 
     try:
         # Load cookies if they exist
-        # Tip: In Render, the file will be in the same folder as app.py
         cookies_path = os.path.join(os.path.dirname(__file__), "cookies.txt")
         
         if os.path.exists(cookies_path):
             print(f"Loading cookies from {cookies_path}...")
-            transcript = YouTubeTranscriptApi.get_transcript(video_id, cookies=cookies_path)
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id, cookies=cookies_path)
         else:
             print("No cookies.txt found. Trying without cookies...")
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+
+        # Build full text transcript
+        full_transcript = " ".join([t['text'] for t in transcript_list])
+
+        # --- AI SUMMARIZATION ---
+        # Note: You need to set GEMINI_API_KEY in your Render environment variables
+        import google.generativeai as genai
+        api_key = os.environ.get("GEMINI_API_KEY")
+        
+        if not api_key:
+            return jsonify({"error": "GEMINI_API_KEY not found in server environment"}), 500
+            
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        Summarize the following YouTube video transcript.
+        Provide the output in a JSON format with exactly these keys:
+        - short_summary: A 1-2 sentence overview.
+        - detailed_summary: A thorough multiple-paragraph breakdown.
+        - key_takeaways: A list of 5-8 bullet points.
+        - important_insights: A list of 3-5 deep dives.
+        - video_title: Use 'YouTube Intelligence Report'
+        - video_url: {video_url}
+        - key_moments: A list of objects with 'title', 'description', and 'timestamp' (float).
+        
+        Transcript:
+        {full_transcript[:10000]}  # Limit to avoid token issues
+        """
+        
+        response = model.generate_content(prompt)
+        import json
+        # Extract JSON from response (handling potential markdown formatting)
+        raw_text = response.text
+        if "```json" in raw_text:
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
+            
+        summary_data = json.loads(raw_text)
 
         return jsonify({
             "video_id": video_id,
-            "transcript": transcript
+            "summary": summary_data
         })
 
     except NoTranscriptFound:
