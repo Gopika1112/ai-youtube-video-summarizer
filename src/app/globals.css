@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-border-primary: var(--border);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-green: var(--accent-green);
+  --color-accent-clay: var(--accent-clay);
+  --color-accent-sage: var(--accent-sage);
+  --color-accent-ochre: var(--accent-ochre);
+  --color-accent-slate: var(--accent-slate);
+  --color-accent-copper: var(--accent-copper);
+  
+  /* Overriding default Tailwind colors to match the earthy blue theme */
+  --color-blue-500: #3b82f6; /* Keep some blue for references but earthy */
+  --color-blue-400: #60a5fa;
+  --color-blue-600: #2563eb;
+  
+  --color-earthy-blue: #475569; /* Slate 600 */
+  --color-deep-ocean: #1e293b; /* Slate 800 */
+  --color-storm: #334155; /* Slate 700 */
+  
+  /* Earthy Accents */
+  --color-slate-500: #64748b;
+  --color-indigo-500: #6366f1;
+  --color-teal-500: #14b8a6;
+}
+
+:root {
+  --background: #0f172a; /* Deep Earthy Navy / Slate */
+  --foreground: #f8fafc; /* Slate White */
+  --muted: #94a3b8; /* Slate Muted */
+  --border: #1e293b; /* Slate Border */
+  --primary: #1e293b; 
+  --accent: #3b82f6;
+  --accent-blue: #3b82f6; /* Earthy Blue */
+  --accent-purple: #6366f1;
+  --accent-green: #10b981;
+  --accent-slate: #64748b; 
+  --bg-secondary: #1e293b;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  min-height: 100vh;
+}
+
+.glass {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-premium {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.2s;
+  box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.15);
+  overflow: hidden;
+}
+
+.btn-premium:hover {
+  transform: scale(1.02);
+  background-color: #ffffff;
+}
+
+.btn-premium:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+.badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  background-color: rgba(59, 130, 246, 0.05);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #3b82f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Toast Styles */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  padding: 1.25rem 2rem;
+  border-radius: 1.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-success {
+  border-left: 4px solid #10b981;
+  color: var(--foreground);
+}
+
+.toast-error {
+  border-left: 4px solid #ef4444;
+  color: var(--foreground);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 2rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
