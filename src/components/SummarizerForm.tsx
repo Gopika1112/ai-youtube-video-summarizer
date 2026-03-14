@@ -45,19 +45,20 @@ export default function SummarizerForm({ onSubmit }: Props) {
                     try {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const translateChunk = async (chunk: any, retries: number = 3): Promise<any> => {
+                            const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
                             for (let i = 0; i < retries; i++) {
                                 try {
-                                    const res = await fetch('/api/translate', {
+                                    const res = await fetch(`${API_URL}/api/translate`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ text: JSON.stringify(chunk), targetLanguage })
                                     })
-                                    const data = await res.json()
                                     
                                     if (res.status === 429) {
                                         throw new Error('RATE_LIMIT')
                                     }
                                     
+                                    const data = await res.json()
                                     if (!res.ok) throw new Error(data.error)
                                     return data.translatedData
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -167,7 +168,11 @@ export default function SummarizerForm({ onSubmit }: Props) {
             }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            setError(err.message || 'Error generating summary')
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError') {
+                setError('Server is currently unavailable. Please try again later.')
+            } else {
+                setError(err.message || 'Error generating summary')
+            }
         } finally {
             setLoading(false)
         }

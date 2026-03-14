@@ -68,7 +68,8 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
 
         setLoading(true)
         try {
-            const res = await fetch('/api/translate', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+            const res = await fetch(`${API_URL}/api/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -76,15 +77,23 @@ export default function SummaryModal({ summary, onClose, onDelete, showToast }: 
                     targetLanguage 
                 })
             })
-            const data = await res.json()
             
-            if (!res.ok) throw new Error(data.error)
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error)
+            }
+
+            const data = await res.json()
             setTranslatedText(data.translatedText)
             showToast(`Translated to ${targetLanguage}`, 'success')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error(err)
-            showToast(err.message || 'Translation failed', 'error')
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError') {
+                showToast('Server is currently unavailable. Please try again later.', 'error')
+            } else {
+                showToast(err.message || 'Translation failed', 'error')
+            }
         } finally {
             setLoading(false)
         }

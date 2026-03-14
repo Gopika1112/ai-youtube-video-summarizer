@@ -29,29 +29,36 @@ export default function DashboardPage() {
     }, [router])
 
     const handleNewSummary = async (videoUrl: string) => {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
         try {
-            const res = await fetch('/api/summarize', {
+            const res = await fetch(`${API_URL}/api/summarize`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: videoUrl }),
             })
             
-            const data = await res.json()
-            
             if (!res.ok) {
+                const data = await res.json()
                 if (res.status === 401 || data.error === 'Unauthorized') {
                     throw new Error('Session expired. Please sign out and sign in again.')
                 }
                 throw new Error(data.error || 'Failed to generate summary')
             }
             
+            const data = await res.json()
             return data.summary
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
+            console.error('Full Extraction Error:', err);
+            
+            // Check if server is unreachable
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError') {
+                throw new Error('Server is currently unavailable. Please try again later.')
+            }
+
             if (err.name === 'AbortError') {
                 throw new Error('Neural synthesis timed out. The video might be too long or the AI is under heavy load. Please try again.')
             }
-            console.error('Full Extraction Error:', err);
             throw err;
         }
     }

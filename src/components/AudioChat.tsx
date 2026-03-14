@@ -124,7 +124,8 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
         handleStopSpeech()
 
         try {
-            const res = await fetch('/api/chat', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+            const res = await fetch(`${API_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -134,15 +135,22 @@ export default function AudioChat({ videoId, videoTitle }: Props) {
                 })
             })
 
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error)
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error)
+            }
 
+            const data = await res.json()
             const aiMessage: Message = { role: 'assistant', content: data.response }
             setMessages(prev => [...prev, aiMessage])
             speak(data.response)
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Forgive me, my neural link is failing. Please try again.' }])
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError') {
+                setMessages(prev => [...prev, { role: 'assistant', content: 'Server is currently unavailable. Please try again later.' }])
+            } else {
+                setMessages(prev => [...prev, { role: 'assistant', content: 'Forgive me, my neural link is failing. Please try again.' }])
+            }
         } finally {
             setLoading(false)
         }
