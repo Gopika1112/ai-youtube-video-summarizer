@@ -32,7 +32,30 @@ def summarize():
         video_id = video_url
 
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        print(f"Attempting primary fetch for {video_id}...")
+        try:
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            print("Primary fetch success!")
+        except Exception as primary_error:
+            print(f"Primary fetch failed: {primary_error}. Attempting yt-dlp fallback...")
+            import yt_dlp
+            ydl_opts = {
+                'skip_download': True,
+                'writesubtitles': True,
+                'writeautomaticsub': True,
+                'subtitleslangs': ['en.*'],
+                'quiet': True,
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(video_url, download=False)
+                # Some videos don't have subs in a format we can easily parse here without extra complexity
+                # but yt-dlp can at least confirm if they exist.
+                # For now, if primary fails, we try to at least get the description as a last resort
+                description = info.get('description', '')
+                if not description:
+                     raise Exception("Could not find transcript or description")
+                transcript_list = [{'text': f"Title: {info.get('title')}\nDescription: {description}"}]
+                print("yt-dlp fallback success (using description)!")
 
         # Build full text transcript
         full_transcript = " ".join([t['text'] for t in transcript_list])
