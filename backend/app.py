@@ -4,6 +4,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 import os
 import json
+import time
 from google import genai
 from groq import Groq
 from dotenv import load_dotenv
@@ -50,35 +51,52 @@ def summarize():
         video_id = video_url
 
     try:
-        # --- TRANSCRIPT EXTRACTION ---
-        # Universal implementation — works with both old and new youtube-transcript-api versions
+        # --- TRANSCRIPT EXTRACTION WITH RETRY + EXPONENTIAL BACKOFF ---
         print(f"Fetching transcript for video ID: {video_id}...")
-        try:
-            api = YouTubeTranscriptApi()
+        full_transcript = None
+        retries = 3
+        delay = 3  # seconds (doubles each retry: 3 → 6 → 12)
 
-            # v0.6+ uses instance method .fetch()
-            # Older versions use class method .get_transcript()
-            if hasattr(api, 'fetch'):
-                try:
-                    fetched = api.fetch(video_id, languages=['en', 'en-US', 'en-GB'])
-                except Exception:
-                    fetched = api.fetch(video_id)
-                full_transcript = " ".join([item.text for item in fetched])
-            else:
-                try:
-                    transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB'])
-                except Exception:
-                    transcript = YouTubeTranscriptApi.get_transcript(video_id)
-                full_transcript = " ".join([item['text'] for item in transcript])
+        for attempt in range(retries):
+            try:
+                api = YouTubeTranscriptApi()
 
-            print(f"Transcript fetched successfully ({len(full_transcript)} chars)")
+                # v0.6+ uses instance .fetch(), older uses class .get_transcript()
+                if hasattr(api, 'fetch'):
+                    try:
+                        fetched = api.fetch(video_id, languages=['en', 'en-US', 'en-GB'])
+                    except Exception:
+                        fetched = api.fetch(video_id)
+                    full_transcript = " ".join([item.text for item in fetched])
+                else:
+                    try:
+                        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB'])
+                    except Exception:
+                        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                    full_transcript = " ".join([item['text'] for item in transcript])
 
-        except NoTranscriptFound:
-            return jsonify({"error": "No transcript available for this video. Please try a video with subtitles or closed captions enabled."}), 404
-        except TranscriptsDisabled:
-            return jsonify({"error": "Transcripts are disabled for this video by the creator."}), 403
-        except Exception as transcript_err:
-            return jsonify({"error": f"Transcript extraction failed: {str(transcript_err)}. This video may not have subtitles available."}), 422
+                print(f"Transcript fetched successfully ({len(full_transcript)} chars)")
+                break  # Success — exit retry loop
+
+            except NoTranscriptFound:
+                return jsonify({"error": "No transcript available for this video. Please try a video with subtitles or closed captions enabled."}), 404
+            except TranscriptsDisabled:
+                return jsonify({"error": "Transcripts are disabled for this video by the creator."}), 403
+            except Exception as e:
+                err_str = str(e)
+                if '429' in err_str or 'Too Many Requests' in err_str:
+                    if attempt < retries - 1:
+                        print(f"Rate limited by YouTube (attempt {attempt+1}). Retrying in {delay}s...")
+                        time.sleep(delay)
+                        delay *= 2  # Exponential backoff
+                        continue
+                    else:
+                        return jsonify({"error": "YouTube rate limit reached. Please wait a moment and try again."}), 429
+                else:
+                    return jsonify({"error": f"Transcript extraction failed: {err_str}. This video may not have subtitles available."}), 422
+
+        if not full_transcript:
+            return jsonify({"error": "Could not retrieve transcript after multiple attempts. Please try again later."}), 503
 
         # --- AI SUMMARIZATION ---
         api_key = os.environ.get("GEMINI_API_KEY")
