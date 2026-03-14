@@ -350,8 +350,15 @@ export default function SummarizerForm({ onSubmit }: Props) {
                             </div>
 
                             <div className="flex-1 space-y-4">
-                                <div className="badge-premium bg-blue-500/10 text-blue-500 border-blue-500/20">
-                                    Synthesis Complete
+                                <div className="flex flex-wrap gap-3">
+                                    <div className="badge-premium bg-blue-500/10 text-blue-500 border-blue-500/20">
+                                        Synthesis Complete
+                                    </div>
+                                    {(result as any)?._source === 'cache' && (
+                                        <div className="badge-premium bg-amber-500/10 text-amber-500 border-amber-500/20 flex items-center gap-1.5">
+                                            <Zap size={14} className="fill-current" /> Lightning Fast (Cached)
+                                        </div>
+                                    )}
                                 </div>
                                 <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-tight">
                                     {result?.video_title}

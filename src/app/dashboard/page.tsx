@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
     const handleNewSummary = async (videoUrl: string) => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s frontend timeout
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s frontend timeout (aligned with backend)
 
         try {
             const res = await fetch(`/api/summarize`, {
@@ -51,6 +51,10 @@ export default function DashboardPage() {
             }
             
             const data = await res.json()
+            // Attach source info if available
+            if (data.source === 'cache') {
+                return { ...data.summary, _source: 'cache' }
+            }
             return data.summary
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
