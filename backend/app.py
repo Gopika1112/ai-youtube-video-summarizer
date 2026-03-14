@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import youtube_transcript_api
+from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 import os
 import google.generativeai as genai
@@ -28,7 +28,7 @@ def summarize():
         video_id = video_url
 
     try:
-        transcript_list = youtube_transcript_api.YouTubeTranscriptApi.get_transcript(video_id)
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
 
         # Build full text transcript
         full_transcript = " ".join([t['text'] for t in transcript_list])
