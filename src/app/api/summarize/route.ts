@@ -17,15 +17,38 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No URL provided' }, { status: 400 })
         }
 
+        // Extract video ID for caching check
+        let videoId = videoUrl;
+        if (videoUrl.includes("v=")) {
+            videoId = videoUrl.split("v=")[1].split("&")[0];
+        } else if (videoUrl.includes("youtu.be/")) {
+            videoId = videoUrl.split("youtu.be/")[1].split("?")[0];
+        }
+
+        console.log(`[PROXY] Checking cache for video: ${videoId}`)
+        
+        // 1. READ-ASIDE CACHE: Check if we already have this summary in the DB
+        const { data: existingSummary } = await supabase
+            .from('summaries')
+            .select('*')
+            .eq('video_id', videoId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (existingSummary) {
+            console.log(`[PROXY] Cache Hit for video: ${videoId}`)
+            return NextResponse.json({ summary: existingSummary, source: 'cache' })
+        }
+
         // --- PROXY TO BACKEND ---
-        // Dynamically use the environment variable for the backend URL
         const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-summarizer-backend-8k4t.onrender.com"
         const SUMMARIZE_ENDPOINT = `${BACKEND_BASE_URL.replace(/\/$/, '')}/summarize`
         
-        console.log(`[PROXY] Sending request to Backend: ${SUMMARIZE_ENDPOINT} for URL: ${videoUrl}`)
+        console.log(`[PROXY] Cache Miss. Sending request to Backend: ${SUMMARIZE_ENDPOINT}`)
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // Increased to 120s to match backend timeout
 
         try {
             const response = await fetch(SUMMARIZE_ENDPOINT, {
