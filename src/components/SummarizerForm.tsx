@@ -174,7 +174,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
     }
 
     return (
-        <div className="max-w-5xl mx-auto w-full px-6 min-h-[80vh] flex flex-col justify-center">
+        <div className="max-w-5xl mx-auto w-full px-6 min-h-[85vh] flex flex-col justify-center items-center">
             <AnimatePresence mode="wait">
                 {!result && !loading ? (
                     <motion.div
@@ -182,72 +182,71 @@ export default function SummarizerForm({ onSubmit }: Props) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="py-12"
+                        className="py-12 w-full max-w-4xl"
                     >
                         {/* Header Section */}
-                        <div className="text-center space-y-6 mb-12">
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="flex items-center justify-center gap-3 text-blue-500"
-                            >
-                                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                                    <Youtube size={32} />
-                                </div>
-                                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-800">
-                                    YouTube Summarizer
-                                </h1>
-                            </motion.div>
+                        <div className="flex items-center justify-center gap-4 mb-16">
+                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-blue-500">
+                                <Youtube size={28} />
+                            </div>
+                            <h1 className="text-5xl font-extrabold tracking-tight text-[#1e293b]">
+                                YouTube Summarizer
+                            </h1>
                         </div>
 
                         {/* Input Section */}
-                        <form onSubmit={handleSubmit} className="relative max-w-3xl mx-auto">
-                            <div className="relative flex items-center bg-white border border-slate-200 rounded-full shadow-sm hover:shadow-md transition-all focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500/50 p-1.5 pl-6 group">
+                        <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto">
+                            <div className="relative flex items-center bg-white border border-slate-200 rounded-full shadow-sm hover:shadow-md transition-all focus-within:ring-8 focus-within:ring-blue-500/5 focus-within:border-blue-400/50 p-2 pl-8 group">
                                 <div className="text-slate-400 group-focus-within:text-blue-500 transition-colors">
                                     <Youtube size={24} />
                                 </div>
                                 <input
                                     type="url"
                                     placeholder="Paste YouTube video URL here..."
-                                    className="w-full bg-transparent border-none py-4 px-4 text-slate-700 placeholder-slate-400 outline-none font-medium text-lg"
+                                    className="w-full bg-transparent border-none py-4 px-5 text-slate-700 placeholder-slate-400 outline-none font-medium text-lg"
                                     value={url}
                                     onChange={(e) => setUrl(e.target.value)}
                                 />
                                 
-                                <div className="flex items-center gap-2 border-l border-slate-100 pl-4 pr-2">
+                                <div className="flex items-center gap-3 border-l border-slate-100 pl-6 pr-4">
                                     <select 
                                         value={targetLanguage}
                                         onChange={(e) => setTargetLanguage(e.target.value)}
-                                        className="bg-transparent text-sm font-semibold text-slate-600 outline-none cursor-pointer appearance-none px-2"
+                                        className="bg-transparent text-sm font-semibold text-slate-600 outline-none cursor-pointer appearance-none px-1"
                                     >
                                         {LANGUAGES.map(lang => (
                                             <option key={lang.code} value={lang.code} className="bg-white">{lang.label}</option>
                                         ))}
                                     </select>
-                                    <Globe size={18} className="text-slate-400" />
+                                    <Globe size={18} className="text-slate-300" />
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={!url.trim()}
-                                    className="bg-blue-400 hover:bg-blue-500 text-white font-bold h-12 px-8 rounded-full transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm whitespace-nowrap"
+                                    className="bg-[#3b82f6] hover:bg-blue-600 text-white font-bold h-14 px-10 rounded-full transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm whitespace-nowrap ml-2"
                                 >
                                     <Sparkles size={18} /> Summarize
                                 </button>
                             </div>
 
                             {/* Center-aligned Subtitle */}
-                            <p className="mt-6 text-slate-400 text-center font-medium">
+                            <p className="mt-8 text-slate-400 text-center font-medium">
                                 Try it with any YouTube video! Just paste the URL and let AI do the magic ✨
                             </p>
 
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-8 flex items-center gap-2 text-red-500 font-medium bg-red-50 border border-red-100 p-4 rounded-2xl justify-center text-sm"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="mt-10 flex border border-red-50 bg-red-50/30 p-6 rounded-[32px] gap-4"
                                 >
-                                    <Zap size={16} /> {error}
+                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-red-100 flex items-center justify-center text-red-500 shrink-0">
+                                        <Zap size={20} />
+                                    </div>
+                                    <p className="text-red-500 font-semibold text-sm leading-relaxed flex items-center">
+                                        {error}
+                                    </p>
                                 </motion.div>
                             )}
                         </form>

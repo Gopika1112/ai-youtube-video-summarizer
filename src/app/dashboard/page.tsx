@@ -70,9 +70,9 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="min-h-screen bg-white flex">
             <Navbar user={user} onSignOut={handleSignOut} />
-            <main className="flex-1 flex flex-col items-center py-10 pl-32 transition-all duration-300">
+            <main className="flex-1 flex flex-col items-center py-10 pl-[70px] transition-all duration-300">
                 <SummarizerForm onSubmit={handleNewSummary} />
             </main>
         </div>
