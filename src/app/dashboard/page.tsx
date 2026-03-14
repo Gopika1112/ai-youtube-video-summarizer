@@ -29,9 +29,8 @@ export default function DashboardPage() {
     }, [router])
 
     const handleNewSummary = async (videoUrl: string) => {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
         try {
-            const res = await fetch(`${API_URL}/summarize`, {
+            const res = await fetch(`/api/summarize`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: videoUrl }),
