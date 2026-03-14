@@ -174,7 +174,7 @@ export default function SummarizerForm({ onSubmit }: Props) {
     }
 
     return (
-        <div className="max-w-5xl mx-auto w-full px-6 min-h-[85vh] flex flex-col justify-center items-center">
+        <div className="max-w-5xl mx-auto w-full px-6">
             <AnimatePresence mode="wait">
                 {!result && !loading ? (
                     <motion.div
@@ -182,71 +182,66 @@ export default function SummarizerForm({ onSubmit }: Props) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="py-12 w-full max-w-4xl"
+                        className="py-12 md:py-24"
                     >
-                        {/* Header Section */}
-                        <div className="flex items-center justify-center gap-4 mb-16">
-                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-blue-500">
-                                <Youtube size={28} />
-                            </div>
-                            <h1 className="text-5xl font-extrabold tracking-tight text-[#1e293b]">
-                                YouTube Summarizer
+                        <div className="text-center space-y-8 mb-16">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs font-black uppercase tracking-[0.2em]"
+                            >
+                                <Sparkles size={14} /> INTELLIGENCE PORT
+                            </motion.div>
+                            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none">
+                                Synthesize <span className="text-blue-500">Knowledge</span>
                             </h1>
+                            <p className="text-slate-400 text-xl max-w-2xl mx-auto font-medium leading-relaxed">
+                                Deploy our AI agents to extract strategic insights and key takeaways from any video stream.
+                            </p>
                         </div>
 
-                        {/* Input Section */}
-                        <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto">
-                            <div className="relative flex items-center bg-white border border-slate-200 rounded-full shadow-sm hover:shadow-md transition-all focus-within:ring-8 focus-within:ring-blue-500/5 focus-within:border-blue-400/50 p-2 pl-8 group">
-                                <div className="text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                                    <Youtube size={24} />
-                                </div>
-                                <input
-                                    type="url"
-                                    placeholder="Paste YouTube video URL here..."
-                                    className="w-full bg-transparent border-none py-4 px-5 text-slate-700 placeholder-slate-400 outline-none font-medium text-lg"
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
-                                />
-                                
-                                <div className="flex items-center gap-3 border-l border-slate-100 pl-6 pr-4">
-                                    <select 
-                                        value={targetLanguage}
-                                        onChange={(e) => setTargetLanguage(e.target.value)}
-                                        className="bg-transparent text-sm font-semibold text-slate-600 outline-none cursor-pointer appearance-none px-1"
+                        <form onSubmit={handleSubmit} className="relative max-w-3xl mx-auto">
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-[32px] blur opacity-25 group-focus-within:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="relative flex items-center bg-[#0f172a] border border-[#1e293b] rounded-[28px] overflow-hidden p-2 pl-6 focus-within:border-blue-500/50 transition-all">
+                                    <div className="text-slate-500 group-focus-within:text-blue-500 transition-colors">
+                                        <Youtube size={28} />
+                                    </div>
+                                    <input
+                                        type="url"
+                                        placeholder="Enter YouTube URL: https://youtube.com/watch?v=..."
+                                        className="w-full bg-transparent border-none py-6 px-6 text-white placeholder-[#3d342d] outline-none font-medium text-lg"
+                                        value={url}
+                                        onChange={(e) => setUrl(e.target.value)}
+                                    />
+                                    <div className="flex items-center gap-2 border-l border-white/5 pl-6 pr-4">
+                                        <Globe size={20} className="text-slate-600" />
+                                        <select 
+                                            value={targetLanguage}
+                                            onChange={(e) => setTargetLanguage(e.target.value)}
+                                            className="bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
+                                        >
+                                            {LANGUAGES.map(lang => (
+                                                <option key={lang.code} value={lang.code} className="bg-[#0f172a]">{lang.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={!url.trim()}
+                                        className="bg-white text-black font-black h-16 px-10 rounded-[22px] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center gap-2 text-lg shadow-xl"
                                     >
-                                        {LANGUAGES.map(lang => (
-                                            <option key={lang.code} value={lang.code} className="bg-white">{lang.label}</option>
-                                        ))}
-                                    </select>
-                                    <Globe size={18} className="text-slate-300" />
+                                        Extract <ArrowRight size={20} />
+                                    </button>
                                 </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={!url.trim()}
-                                    className="bg-[#3b82f6] hover:bg-blue-600 text-white font-bold h-14 px-10 rounded-full transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm whitespace-nowrap ml-2"
-                                >
-                                    <Sparkles size={18} /> Summarize
-                                </button>
                             </div>
-
-                            {/* Center-aligned Subtitle */}
-                            <p className="mt-8 text-slate-400 text-center font-medium">
-                                Try it with any YouTube video! Just paste the URL and let AI do the magic ✨
-                            </p>
-
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="mt-10 flex border border-red-50 bg-red-50/30 p-6 rounded-[32px] gap-4"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mt-6 flex items-center gap-2 text-red-400 font-bold bg-red-500/5 border border-red-500/10 p-4 rounded-2xl justify-center"
                                 >
-                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-red-100 flex items-center justify-center text-red-500 shrink-0">
-                                        <Zap size={20} />
-                                    </div>
-                                    <p className="text-red-500 font-semibold text-sm leading-relaxed flex items-center">
-                                        {error}
-                                    </p>
+                                    <Zap size={16} /> {error}
                                 </motion.div>
                             )}
                         </form>

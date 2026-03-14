@@ -63,16 +63,16 @@ export default function DashboardPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-white flex">
+        <div className="min-h-screen bg-[#0f172a] flex">
             <Navbar user={user} onSignOut={handleSignOut} />
-            <main className="flex-1 flex flex-col items-center py-10 pl-[70px] transition-all duration-300">
+            <main className="flex-1 flex flex-col items-center py-10 pl-32 transition-all duration-300">
                 <SummarizerForm onSubmit={handleNewSummary} />
             </main>
         </div>
