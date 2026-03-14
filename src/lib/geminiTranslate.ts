@@ -97,8 +97,10 @@ CRITICAL RULES:
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (groqErr: any) {
       console.error("[GROQ FALLBACK] Failed:", groqErr.message);
-      // If Groq fails too, throw the first meaningful error (or Groq's error)
-      throw lastError || groqErr;
+      // If Groq fails too, log the Gemini error but throw the ACTUAL Groq error
+      // so the user sees why the fallback failed.
+      console.error("[GEMINI] Original Error:", lastError?.message);
+      throw groqErr;
   }
 
   throw lastError || new Error("All translation engines failed");

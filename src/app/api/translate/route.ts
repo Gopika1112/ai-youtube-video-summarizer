@@ -23,9 +23,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 })
         }
 
-        // 1. Safety Trim (Reduce token usage)
-        const safetyTrim = (str: string) => str.length > 3000 ? str.substring(0, 2997) + '...' : str;
-        const processedText = safetyTrim(text);
+        // No arbitrary safety trims as it breaks JSON.
+        const processedText = text;
 
         // 2. Check Cache first (Save API costs)
         const cacheHash = generateHash(processedText, targetLanguage);
