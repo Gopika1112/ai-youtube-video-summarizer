@@ -29,12 +29,18 @@ export default function DashboardPage() {
     }, [router])
 
     const handleNewSummary = async (videoUrl: string) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s frontend timeout
+
         try {
             const res = await fetch(`/api/summarize`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: videoUrl }),
+                signal: controller.signal
             })
+            
+            clearTimeout(timeoutId);
             
             if (!res.ok) {
                 const data = await res.json()
@@ -48,16 +54,18 @@ export default function DashboardPage() {
             return data.summary
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
+            clearTimeout(timeoutId);
             console.error('Full Extraction Error:', err);
             
+            if (err.name === 'AbortError') {
+                throw new Error('Neural synthesis timed out. The video might be too long or the AI is under heavy load. Please try again.')
+            }
+
             // Check if server is unreachable
             if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.name === 'TypeError') {
                 throw new Error('Server is currently unavailable. Please try again later.')
             }
 
-            if (err.name === 'AbortError') {
-                throw new Error('Neural synthesis timed out. The video might be too long or the AI is under heavy load. Please try again.')
-            }
             throw err;
         }
     }
