@@ -81,23 +81,37 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
         }
     }
 
-    // --- NEW: yt-dlp Python Scraper Fallback ---
+    // --- NEW: youtubei.js (Innertube) Engine ---
     if (!transcriptData || transcriptData.length === 0) {
-        console.log('[TRANSCRIPT] Engaging yt-dlp Python Scraper Engine...');
+        console.log('[TRANSCRIPT] Engaging Innertube (youtubei.js) Engine...');
         try {
-            const scraperPath = path.join(process.cwd(), 'src/app/api/summarize/yt_dlp_scraper.py')
-            const resultJson = execSync(`python "${scraperPath}" "${videoUrl}"`, { encoding: 'utf8' })
-            const result = JSON.parse(resultJson)
+            const { Innertube } = await import('youtubei.js');
+            const youtube = await Innertube.create();
+            const info = await youtube.getInfo(videoId);
             
-            if (result && !result.error && result.segments?.length) {
-                transcriptData = result.segments
-                engine = 'yt-dlp'
-                console.log('[TRANSCRIPT] yt-dlp Engine Success!');
-            } else if (result.error) {
-                console.warn('[TRANSCRIPT] yt-dlp Engine reported error:', result.error);
+            // Check if video is actually available
+            if (!info || !info.primary_info) {
+                 throw new Error('VIDEO_NOT_FOUND');
+            }
+
+            const transcript = await info.getTranscript();
+            
+            if (transcript?.transcript?.content?.body?.initial_segments) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                transcriptData = transcript.transcript.content.body.initial_segments.map((s: any) => ({
+                    text: s.text.toString(),
+                    offset: parseInt(s.start_ms) / 1000,
+                    duration: (parseInt(s.end_ms) - parseInt(s.start_ms)) / 1000
+                }));
+                engine = 'Innertube';
+                console.log('[TRANSCRIPT] Innertube Engine Success!');
             }
         } catch (e: unknown) {
-            console.error('[TRANSCRIPT] yt-dlp Engine Failed:', e instanceof Error ? e.message : String(e));
+            const msg = e instanceof Error ? e.message : String(e);
+            console.error('[TRANSCRIPT] Innertube Engine Failed:', msg);
+            if (msg.includes('Video unavailable') || msg.includes('404')) {
+                 throw new Error('VIDEO_UNAVAILABLE_OR_NOT_FOUND');
+            }
         }
     }
 
@@ -108,8 +122,8 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const segments: TranscriptSegment[] = transcriptData.map((t: any) => ({
         text: t.text,
-        offset: engine === 'Primary' ? t.offset / 1000 : (engine === 'Manual' || engine === 'yt-dlp' ? t.offset : parseFloat(t.start)),
-        duration: engine === 'Primary' ? t.duration / 1000 : (engine === 'Manual' || engine === 'yt-dlp' ? t.duration : parseFloat(t.dur || '0'))
+        offset: engine === 'Primary' ? t.offset / 1000 : (engine === 'Manual' || engine === 'yt-dlp' || engine === 'Innertube' ? t.offset : parseFloat(t.start)),
+        duration: engine === 'Primary' ? t.duration / 1000 : (engine === 'Manual' || engine === 'yt-dlp' || engine === 'Innertube' ? t.duration : parseFloat(t.dur || '0'))
     }))
 
     const fullText = segments.map(s => s.text).join(' ')
@@ -340,8 +354,11 @@ export async function POST(request: Request) {
         let statusCode = 500;
 
         if (error.message === 'CAPTION_UNAVAILABLE') {
-            errorMessage = 'No transcript available for this video. Please try a video with Closed Captions (CC) or auto-generated subtitles enabled.';
+            errorMessage = 'No transcript available for this video content. This usually happens with music videos, silent clips, or videos where the creator has disabled Captions (CC). Please try a video with spoken language (like a podcast or tutorial) where CC is enabled.';
             statusCode = 422;
+        } else if (error.message === 'VIDEO_UNAVAILABLE_OR_NOT_FOUND' || error.message?.includes('Video unavailable')) {
+            errorMessage = 'This YouTube video is unavailable, private, or has been removed. Please check the URL and try again.';
+            statusCode = 404;
         } else if (error.name === 'AbortError' || error.message?.includes('aborted')) {
             errorMessage = 'Request timed out. Please try again.';
             statusCode = 504;
