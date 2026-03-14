@@ -115,10 +115,6 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
         }
     }
 
-    if (!transcriptData || transcriptData.length === 0) {
-        throw new Error('CAPTION_UNAVAILABLE')
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const segments: TranscriptSegment[] = transcriptData.map((t: any) => ({
         text: t.text,
@@ -128,6 +124,10 @@ async function getTranscript(videoId: string, videoUrl: string): Promise<{ text:
 
     const fullText = segments.map(s => s.text).join(' ')
     
+    if (!transcriptData || transcriptData.length === 0 || fullText.length < 50) {
+        throw new Error('CAPTION_UNAVAILABLE')
+    }
+
     let title = 'YouTube Video'
     try {
         const oembed = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
@@ -204,7 +204,7 @@ async function generateSummary(
 
     // Final Merge Step
     console.log('[AI] Merging chunk summaries into final report...')
-    const mergePrompt = `Analyze the following intermediate summaries of a YouTube video titled "${videoTitle}" and create a single, cohesive, high-quality final report.
+    const mergePrompt = `Analyze the following intermediate summaries of a YouTube video titled "${videoTitle}" and create a single, cohesive, high-quality final report following the "Expert YouTube Video Content Analyst" protocol.
     
     INTERMEDIATE SUMMARIES:
     ${chunkSummaries.map((s, i) => `PART ${i+1}:\n${s.short_summary}\n${s.detailed_summary}`).join('\n\n')}
@@ -238,19 +238,34 @@ async function summarizeChunk(text: string, title: string): Promise<any> {
 
 async function finalizeSummary(mergePrompt: string, videoTitle: string): Promise<SummaryResult> {
     const finalInstructions = `
+    You are an expert YouTube Video Content Analyst.
+    Your task is to generate a clear and structured summary of the video.
+
+    STRUCTURE:
+    1. TL;DR: Provide a short 2-sentence overview.
+    2. Key Takeaways: Provide 3-5 important bullet points. If timestamps exist, include them like [MM:SS].
+    3. Main Insights: Explain the most important ideas or lessons discussed.
+    4. Conclusion: Give the final message or takeaway.
+
+    RULES:
+    - Be concise and easy to understand.
+    - Do not repeat sentences.
+    - Do not invent information not present in the transcript.
+    - Only summarize the provided content.
+
     Return valid JSON with exactly these fields:
     {
-      "short_summary": "2-3 sentence overview (as a single string)",
-      "detailed_summary": "4-6 detailed paragraphs (as a single string with \\n for newlines, NOT an array)",
-      "key_takeaways": ["Takeaway 1", "Takeaway 2", "Takeaway 3", "Takeaway 4", "Takeaway 5"],
-      "important_insights": ["Insight 1", "Insight 2", "Insight 3", "Insight 4"],
+      "short_summary": "The 2-sentence TL;DR overview (as a single string)",
+      "detailed_summary": "The Main Insights followed by the Conclusion (as a single string with \\n for newlines, NOT an array)",
+      "key_takeaways": ["Takeaway 1 [MM:SS]", "Takeaway 2", "Takeaway 3", "Takeaway 4", "Takeaway 5"],
+      "important_insights": ["Detailed Insight 1", "Detailed Insight 2", "Detailed Insight 3", "Detailed Insight 4"],
       "key_moments": [
         {"timestamp": number_in_seconds, "title": "Moment Title", "description": "Short description"}
       ]
     }
     
     CRITICAL CONSTRAINTS:
-    1. "detailed_summary" MUST be a single string.
+    1. "detailed_summary" MUST be a single string containing text from Main Insights and Conclusion.
     2. "timestamp" MUST be a numeric value in total seconds.
     3. Provide exactly 12 key_moments if the total content allows.`
 
@@ -354,7 +369,7 @@ export async function POST(request: Request) {
         let statusCode = 500;
 
         if (error.message === 'CAPTION_UNAVAILABLE') {
-            errorMessage = 'No transcript available for this video content. This usually happens with music videos, silent clips, or videos where the creator has disabled Captions (CC). Please try a video with spoken language (like a podcast or tutorial) where CC is enabled.';
+            errorMessage = 'Error: The transcript for this video is unavailable or blocked by the creator. Please try a video with Closed Captions (CC) enabled.';
             statusCode = 422;
         } else if (error.message === 'VIDEO_UNAVAILABLE_OR_NOT_FOUND' || error.message?.includes('Video unavailable')) {
             errorMessage = 'This YouTube video is unavailable, private, or has been removed. Please check the URL and try again.';
