@@ -10,6 +10,10 @@ app = Flask(__name__)
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+@app.route('/')
+def home():
+    return jsonify({"status": "healthy", "message": "YouTube Summarizer API is running"}), 200
+
 @app.route('/summarize', methods=['POST'])
 @app.route('/summarize/', methods=['POST'])
 def summarize():
@@ -77,8 +81,10 @@ def summarize():
     except TranscriptsDisabled:
         return jsonify({"error": "Transcripts are disabled for this video."}), 403
     except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        error_msg = traceback.format_exc()
+        print(f"ERROR: {error_msg}")
+        return jsonify({"error": str(e), "details": error_msg}), 500
 
 if __name__ == "__main__":
     # Use the PORT environment variable provided by Render
