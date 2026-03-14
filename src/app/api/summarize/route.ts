@@ -18,25 +18,37 @@ export async function POST(request: Request) {
         }
 
         // --- PROXY TO RENDER BACKEND ---
-        // This solves CORS and YouTube blocking issues by using the Render environment
         const RENDER_BACKEND_URL = "https://youtube-summarizer-backend-8k4t.onrender.com/summarize"
         
         console.log(`[PROXY] Sending request to Render: ${videoUrl}`)
         
-        const response = await fetch(RENDER_BACKEND_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: videoUrl })
-        })
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
-        if (!response.ok) {
-            const errorData = await response.json()
-            console.error('[PROXY] Render Error:', errorData)
-            return NextResponse.json({ error: errorData.error || 'Backend synthesis failed' }, { status: response.status })
-        }
+        try {
+            const response = await fetch(RENDER_BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: videoUrl }),
+                signal: controller.signal
+            })
 
-        const data = await response.json()
-        const summaryResult = data.summary
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { error: errorText };
+                }
+                console.error('[PROXY] Render Error:', errorData)
+                return NextResponse.json({ error: errorData.error || 'Backend synthesis failed' }, { status: response.status })
+            }
+
+            const data = await response.json()
+            const summaryResult = data.summary
 
         // --- SAVE TO SUPABASE ---
         // We still save to the database here to keep the user's history in Next.js
@@ -64,10 +76,18 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ summary: savedSummary })
 
+        } catch (error: any) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                return NextResponse.json({ error: 'Neural synthesis timed out. The video might be too long or the server is busy.' }, { status: 504 })
+            }
+            throw error;
+        }
+
     } catch (error: any) {
         console.error('[PROXY] Fatal Error:', error.message)
         return NextResponse.json({ 
-            error: 'The synthesis server is currently under heavy load or warming up. Please try again in 30 seconds.' 
+            error: error.message || 'The synthesis server is currently under heavy load or warming up.' 
         }, { status: 500 })
     }
 }
