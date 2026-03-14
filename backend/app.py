@@ -198,56 +198,78 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/')
 def home():
+    # Return basic diagnostic info
     return jsonify({
         "status": "healthy", 
         "message": "YouTube Summarizer Intelligence API is active",
-        "version": "1.0.0"
+        "version": "1.1.0",
+        "diagnostics": {
+            "gemini_configured": bool(os.environ.get("GEMINI_API_KEY")),
+            "groq_configured": bool(os.environ.get("GROQ_API_KEY")),
+            "transcript_cache_size": len(TRANSCRIPT_CACHE)
+        }
     }), 200
 
 @app.route('/summarize', methods=['POST'])
 @app.route('/summarize/', methods=['POST'])
 def summarize():
-    data = request.json
-    video_url = data.get('url')
-    
-    if not video_url:
-        return jsonify({"error": "No URL provided"}), 400
-    
-    # Extract video ID
-    if "v=" in video_url:
-        video_id = video_url.split("v=")[1].split("&")[0]
-    elif "youtu.be/" in video_url:
-        video_id = video_url.split("youtu.be/")[1].split("?")[0]
-    else:
-        video_id = video_url
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Missing request body"}), 400
+            
+        video_url = data.get('url')
+        if not video_url:
+            return jsonify({"error": "No URL provided"}), 400
+        
+        # Extract video ID
+        if "v=" in video_url:
+            video_id = video_url.split("v=")[1].split("&")[0]
+        elif "youtu.be/" in video_url:
+            video_id = video_url.split("youtu.be/")[1].split("?")[0]
+        else:
+            video_id = video_url
 
-    logger.info(f"Summarize request received for video: {video_id}")
+        logger.info(f"Summarize request received for video: {video_id}")
 
-    # Unified logic to get content (transcript or description) with retries and caching
-    content, content_type = get_transcript_and_metadata(video_id)
+        # 1. Fetch Content (with retries and caching)
+        try:
+            content, content_type = get_transcript_and_metadata(video_id)
+        except Exception as e:
+            logger.error(f"Critical failure in get_transcript_and_metadata: {str(e)}", exc_info=True)
+            return jsonify({"error": f"Internal error during content retrieval: {str(e)}"}), 500
 
-    if not content:
+        if not content:
+            return jsonify({
+                "error": "Access Denied by YouTube. We couldn't fetch the transcript or description for this video. It might be age-restricted or private.",
+                "video_id": video_id,
+                "code": "YOUTUBE_FETCH_FAILED"
+            }), 404
+
+        # 2. AI Summarization with fallback
+        try:
+            summary_data = summarize_with_ai(content, video_url)
+        except Exception as e:
+            logger.error(f"Critical failure in summarize_with_ai: {str(e)}", exc_info=True)
+            return jsonify({"error": f"Internal error during AI synthesis: {str(e)}"}), 500
+
+        if not summary_data:
+            return jsonify({
+                "error": "Neural synthesis engine failed to resolve. Both Gemini and Groq fallbacks are currently unresponsive.",
+                "video_id": video_id,
+                "code": "AI_SYNTHESIS_FAILED"
+            }), 503
+
+        # Add source meta to response
+        summary_data["source_used"] = content_type
+
         return jsonify({
-            "error": "Could not retrieve transcript or video description after multiple attempts.",
-            "video_id": video_id
-        }), 404
-
-    # 3. AI Summarization with fallback
-    summary_data = summarize_with_ai(content, video_url)
-
-    if not summary_data:
-        return jsonify({
-            "error": "AI summarization failed. Please try again later.",
-            "video_id": video_id
-        }), 500
-
-    # Add source meta to response
-    summary_data["source_used"] = content_type
-
-    return jsonify({
-        "video_id": video_id,
-        "summary": summary_data
-    })
+            "video_id": video_id,
+            "summary": summary_data
+        })
+    except Exception as e:
+        logger.error(f"Fatal unhandled error in /summarize: {str(e)}", exc_info=True)
+        return jsonify({"error": f"A fatal error occurred on the backend: {str(e)}"}), 500
 
 if __name__ == "__main__":
     # Use the PORT environment variable provided by Render

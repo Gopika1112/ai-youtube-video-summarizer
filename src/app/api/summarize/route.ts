@@ -62,14 +62,20 @@ export async function POST(request: Request) {
 
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error(`[PROXY] Render Failed (${response.status}):`, errorText)
+                
                 let errorData;
                 try {
                     errorData = JSON.parse(errorText);
                 } catch {
                     errorData = { error: errorText };
                 }
-                console.error('[PROXY] Render Error:', errorData)
-                return NextResponse.json({ error: errorData.error || 'Backend synthesis failed' }, { status: response.status })
+                
+                return NextResponse.json({ 
+                    error: errorData.error || 'Backend synthesis failed',
+                    details: errorData.details || errorText,
+                    code: errorData.code || 'BACKEND_ERROR'
+                }, { status: response.status })
             }
 
             const data = await response.json()
