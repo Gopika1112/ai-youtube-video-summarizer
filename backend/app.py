@@ -8,13 +8,10 @@ import json
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": [
-    "https://ai-youtube-video-summarizer.vercel.app", 
-    "https://ai-youtube-video-summarizer-1f33wzzxl-gopika1112s-projects.vercel.app",
-    "http://localhost:3000"
-]}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/summarize', methods=['POST'])
+@app.route('/summarize/', methods=['POST'])
 def summarize():
     data = request.json
     video_url = data.get('url')
